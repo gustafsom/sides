@@ -2,6 +2,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { vocabularySeed, grammarSeed, listeningSeed, readingSeed, placementSeed } from './content.mjs';
+import { learningItemSeed } from './block4-content.mjs';
 
 export function openDatabase(path = resolve('data/sides.sqlite')) {
   mkdirSync(dirname(path), { recursive: true });
@@ -10,6 +11,14 @@ export function openDatabase(path = resolve('data/sides.sqlite')) {
   migrate(db);
   seed(db);
   return db;
+}
+
+function hasColumn(db,table,column) {
+  return db.prepare(`PRAGMA table_info(${table})`).all().some(x=>x.name===column);
+}
+
+function addColumn(db,table,column,definition) {
+  if(!hasColumn(db,table,column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
 }
 
 function migrate(db) {
@@ -86,6 +95,19 @@ function migrate(db) {
       options_json TEXT NOT NULL
     ) STRICT;
 
+    CREATE TABLE IF NOT EXISTS learning_items (
+      id INTEGER PRIMARY KEY,
+      kind TEXT NOT NULL CHECK(kind IN ('chunk','contrast')),
+      level TEXT NOT NULL,
+      skill TEXT NOT NULL,
+      prompt TEXT NOT NULL,
+      answer TEXT NOT NULL,
+      alternatives_json TEXT NOT NULL DEFAULT '[]',
+      explanation TEXT NOT NULL,
+      example TEXT NOT NULL,
+      tags TEXT NOT NULL DEFAULT ''
+    ) STRICT;
+
     CREATE TABLE IF NOT EXISTS activity (
       day TEXT PRIMARY KEY,
       xp INTEGER NOT NULL DEFAULT 0,
@@ -109,6 +131,15 @@ function migrate(db) {
       PRIMARY KEY (skill_type, skill_key)
     ) STRICT;
 
+    CREATE TABLE IF NOT EXISTS skill_events (
+      id INTEGER PRIMARY KEY,
+      skill_type TEXT NOT NULL,
+      skill_key TEXT NOT NULL,
+      correct INTEGER NOT NULL,
+      score_after REAL NOT NULL,
+      created_at TEXT NOT NULL
+    ) STRICT;
+
     CREATE TABLE IF NOT EXISTS error_log (
       id INTEGER PRIMARY KEY,
       item_type TEXT NOT NULL,
@@ -120,7 +151,17 @@ function migrate(db) {
     ) STRICT;
 
     CREATE INDEX IF NOT EXISTS idx_error_log_open ON error_log(resolved_at, created_at);
+    CREATE INDEX IF NOT EXISTS idx_skill_events_lookup ON skill_events(skill_type,skill_key,created_at);
+    CREATE INDEX IF NOT EXISTS idx_reviews_time ON reviews(reviewed_at,mode);
+    CREATE INDEX IF NOT EXISTS idx_srs_due ON srs(due_at,item_type,reps);
   `);
+
+  addColumn(db,'srs','stability','REAL');
+  addColumn(db,'srs','difficulty','REAL');
+  addColumn(db,'srs','elapsed_days','INTEGER NOT NULL DEFAULT 0');
+  addColumn(db,'srs','scheduled_days','INTEGER NOT NULL DEFAULT 0');
+  addColumn(db,'srs','learning_steps','INTEGER NOT NULL DEFAULT 0');
+  addColumn(db,'srs','state','INTEGER NOT NULL DEFAULT 0');
 }
 
 function seed(db) {
@@ -128,10 +169,11 @@ function seed(db) {
   if (count === 0) {
     const insert = db.prepare('INSERT INTO vocabulary(spanish,portuguese,example_es,example_pt,level,tags) VALUES (?,?,?,?,?,?)');
     for (const row of vocabularySeed) insert.run(...row);
-    const now = new Date(0).toISOString();
-    const srs = db.prepare('INSERT INTO srs(item_type,item_id,due_at) VALUES (?,?,?)');
-    for (const row of db.prepare('SELECT id FROM vocabulary').all()) srs.run('vocabulary', row.id, now);
   }
+
+  const epoch = new Date(0).toISOString();
+  const ensureSrs = db.prepare('INSERT OR IGNORE INTO srs(item_type,item_id,due_at) VALUES (?,?,?)');
+  for (const row of db.prepare('SELECT id FROM vocabulary').all()) ensureSrs.run('vocabulary', row.id, epoch);
 
   if (db.prepare('SELECT COUNT(*) AS n FROM grammar_exercises').get().n === 0) {
     const insert = db.prepare('INSERT INTO grammar_exercises(level,skill,prompt,answers_json,explanation) VALUES (?,?,?,?,?)');
@@ -153,8 +195,15 @@ function seed(db) {
     for (const x of placementSeed) insert.run(x.level, x.prompt, JSON.stringify(x.answers), JSON.stringify(x.options));
   }
 
+  if (db.prepare('SELECT COUNT(*) AS n FROM learning_items').get().n === 0) {
+    const insert = db.prepare(`INSERT INTO learning_items(kind,level,skill,prompt,answer,alternatives_json,explanation,example,tags)
+      VALUES (?,?,?,?,?,?,?,?,?)`);
+    for (const x of learningItemSeed) insert.run(x.kind,x.level,x.skill,x.prompt,x.answer,JSON.stringify(x.alternatives||[]),x.explanation,x.example,x.tags||'');
+  }
+  for (const row of db.prepare('SELECT id,kind FROM learning_items').all()) ensureSrs.run(row.kind,row.id,epoch);
+
   const defaults = {
-    schemaVersion: 'SIDES-DB-V2',
+    schemaVersion: 'SIDES-DB-V3',
     placementLevel: 'UNASSESSED',
     placementCompleted: 'false',
     spanishVariant: 'es',
@@ -162,7 +211,7 @@ function seed(db) {
   };
   const meta = db.prepare('INSERT OR IGNORE INTO meta(key,value) VALUES (?,?)');
   for (const [k,v] of Object.entries(defaults)) meta.run(k,v);
-  db.prepare('INSERT INTO meta(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('schemaVersion','SIDES-DB-V2');
+  db.prepare('INSERT INTO meta(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('schemaVersion','SIDES-DB-V3');
 }
 
 export function getMeta(db, key, fallback = null) {
