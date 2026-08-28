@@ -40,6 +40,7 @@ test('errors become adaptive mastery signals and resolve after recovery',()=>{
   assert.equal(dash.insights.openErrors,0);
 });
 
+
 test('unassessed sessions stay at A1 and language variant is validated',()=>{
   const db=openDatabase(':memory:');
   const session=dailySession(db,20);
