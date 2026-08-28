@@ -135,13 +135,27 @@ Os blocos têm entrega funcional independente. A linha de chegada definida é o 
 - migração aditiva para `SIDES-DB-V10`;
 - API local `SIDES-API-V9`.
 
-## Bloco 12 — Produto Windows instalável
+## Bloco 12 — Produto Windows instalável ✅
 
-- instalação e atalhos;
-- execução sem terminal;
-- atualização opt-in segura;
-- verificação de pacote/checksum;
-- funcionamento local mesmo sem GitHub disponível.
+- SIDES `0.12.0` empacotável para Windows x64;
+- `node.exe` portátil incluído no pacote e `ts-fsrs@5.4.1` embarcado;
+- instalação padrão em `%LOCALAPPDATA%\SIDES`;
+- código versionado em `versions\<versão>` e dados persistentes fora das versões;
+- `SIDES_DATA_DIR` respeitado pelo banco, mantendo o modo fonte compatível com `data/sides.sqlite`;
+- inicialização por `wscript.exe`, sem janela de terminal;
+- validação de que a porta local pertence ao SIDES antes de reutilizá-la;
+- atalhos no Desktop e Menu Iniciar;
+- configuradores de Whisper e LanguageTool mantidos em caminho estável entre versões;
+- pacote `SIDES-WINDOWS-PACKAGE-V1` com SHA-256 por arquivo e checksum do manifesto;
+- ZIP acompanhado de SHA-256 externo;
+- atualização opt-in por pacote local, sem download automático de código;
+- atualização rejeita checksum inválido, pacote incompatível e versão não superior;
+- atualização troca apenas a versão da aplicação e nunca substitui a pasta de dados;
+- desinstalação preserva dados por padrão e exige confirmação adicional para removê-los;
+- CI dedicado em `windows-latest` valida parser PowerShell, constrói o ZIP, verifica o pacote e inicia o servidor usando o Node portátil;
+- pacote do `main` publicado como artifact temporário do GitHub Actions;
+- funcionamento básico após instalação sem Node/npm/Git/GitHub na máquina;
+- DB/API permanecem compatíveis em `SIDES-DB-V10` / `SIDES-API-V9`.
 
 ## Bloco 13 — Qualidade, segurança, SISDEV e Release 1.0
 
