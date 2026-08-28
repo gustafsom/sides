@@ -101,14 +101,14 @@ export function ensureCurriculum(db) {
       seedListening(db);
       seedReading(db);
       db.prepare("INSERT INTO meta(key,value) VALUES ('curriculumPackVersion',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(CURRICULUM_PACK);
-      db.prepare("INSERT INTO meta(key,value) VALUES ('schemaVersion','SIDES-DB-V4') ON CONFLICT(key) DO UPDATE SET value='SIDES-DB-V4'").run();
+      db.prepare("INSERT INTO meta(key,value) VALUES ('curriculumSchemaVersion','SIDES-CURRICULUM-SCHEMA-V1') ON CONFLICT(key) DO UPDATE SET value='SIDES-CURRICULUM-SCHEMA-V1'").run();
       db.exec('COMMIT');
     }catch(error){
       db.exec('ROLLBACK');
       throw error;
     }
   }else{
-    db.prepare("INSERT INTO meta(key,value) VALUES ('schemaVersion','SIDES-DB-V4') ON CONFLICT(key) DO UPDATE SET value='SIDES-DB-V4'").run();
+    db.prepare("INSERT INTO meta(key,value) VALUES ('curriculumSchemaVersion','SIDES-CURRICULUM-SCHEMA-V1') ON CONFLICT(key) DO UPDATE SET value='SIDES-CURRICULUM-SCHEMA-V1'").run();
   }
   return curriculumOverview(db);
 }
