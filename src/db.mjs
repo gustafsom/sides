@@ -9,10 +9,15 @@ import { ensureSpeechSchema } from './speech-service.mjs';
 import { ensureWritingSchema } from './writing-service.mjs';
 import { ensureImmersionSchema } from './immersion-service.mjs';
 import { ensurePlannerSchema } from './planner.mjs';
+import { applyPendingRestore, ensureIntegritySchema } from './integrity.mjs';
 
 export function openDatabase(path = resolve('data/sides.sqlite')) {
-  mkdirSync(dirname(path), { recursive: true });
-  const db = new DatabaseSync(path, { timeout: 3000 });
+  const dbPath=path===':memory:'?path:resolve(path);
+  if(dbPath!==':memory:'){
+    mkdirSync(dirname(dbPath), { recursive: true });
+    applyPendingRestore(dbPath);
+  }
+  const db = new DatabaseSync(dbPath, { timeout: 3000 });
   db.exec('PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;');
   migrate(db);
   seed(db);
@@ -22,7 +27,8 @@ export function openDatabase(path = resolve('data/sides.sqlite')) {
   ensureWritingSchema(db);
   ensureImmersionSchema(db);
   ensurePlannerSchema(db);
-  setMeta(db,'schemaVersion','SIDES-DB-V9');
+  ensureIntegritySchema(db);
+  setMeta(db,'schemaVersion','SIDES-DB-V10');
   return db;
 }
 
@@ -218,7 +224,7 @@ function seed(db) {
   for (const row of db.prepare('SELECT id,kind FROM learning_items').all()) ensureSrs.run(row.kind,row.id,epoch);
 
   const defaults = {
-    schemaVersion: 'SIDES-DB-V9',
+    schemaVersion: 'SIDES-DB-V10',
     placementLevel: 'UNASSESSED',
     placementCompleted: 'false',
     spanishVariant: 'es',
