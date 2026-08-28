@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>SIDES · Planejador diário</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/planner.css">
+</head>
+<body>
+<header class="topbar"><div><strong>SIDES</strong><span>Planejador diário e gamificação madura</span></div><a class="headerLink" href="/">Painel principal</a></header>
+<main>
+  <section class="hero plannerHero"><div><span class="eyebrow">Bloco 10</span><h1>Seu treino de hoje</h1><p>O plano combina retenção, pontos fracos, equilíbrio de competências e designações próximas.</p></div><button id="refreshPlan">Recalcular plano</button></section>
+
+  <div class="plannerGrid">
+    <section class="card"><h2>Meta de hoje</h2><div id="todayProgress"></div></section>
+    <section class="card"><h2>Meta da semana</h2><div id="weekProgress"></div></section>
+  </div>
+
+  <section class="card"><div class="sectionTitle"><div><span class="eyebrow">Fila priorizada</span><h2>O que fazer agora</h2></div><span id="planMinutes" class="trendBadge neutral"></span></div><div id="planItems"></div></section>
+
+  <div class="plannerGrid">
+    <section class="card plannerGoals"><h2>Metas</h2><form id="goalsForm">
+      <label>Minutos por dia<input id="dailyMinutes" type="number" min="10" max="120"></label>
+      <label>Minutos por semana<input id="weeklyMinutes" type="number" min="30" max="840"></label>
+      <label>Dias por semana<input id="weeklyDays" type="number" min="2" max="7"></label>
+      <label>Duração preferida da sessão<input id="preferredSessionMinutes" type="number" min="10" max="60"></label>
+      <button>Salvar metas</button><span id="goalStatus" class="sub"></span>
+    </form></section>
+    <section class="card"><h2>XP efetivo</h2><div id="xpEconomy" class="xpEconomy"></div><p class="sub" id="xpExplanation"></p></section>
+  </div>
+
+  <section class="card"><h2>Conquistas maduras</h2><div id="plannerBadges" class="plannerBadges"></div></section>
+</main>
+<script type="module" src="/planner.js"></script>
+</body>
+</html>

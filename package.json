@@ -1,6 +1,6 @@
 {
   "name": "sides",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": true,
   "type": "module",
   "description": "SIDES - Sistema de Imersao e Desenvolvimento em Espanhol",
@@ -13,6 +13,6 @@
   "scripts": {
     "start": "node src/server.mjs",
     "test": "node --test",
-    "check": "node --check src/server.mjs && node --check src/db.mjs && node --check src/learning.mjs && node --check src/fsrs-adapter.mjs && node --check src/attention.mjs && node --check src/block5-content.mjs && node --check src/block5x-content.mjs && node --check src/curriculum.mjs && node --check src/assignments.mjs && node --check src/speech-align.mjs && node --check src/speech-runtime.mjs && node --check src/speech-service.mjs && node --check src/tts-runtime.mjs && node --check src/writing-prompts.mjs && node --check src/writing-runtime.mjs && node --check src/writing-service.mjs && node --check src/immersion-content.mjs && node --check src/immersion-service.mjs && node --check src/jw-content.mjs && node --check src/jw-service.mjs && node --check public/app.js && node --check public/curriculum.js && node --check public/assignment-summary.js && node --check public/assignments.js && node --check public/speech.js && node --check public/writing.js && node --check public/immersion.js && node --check public/jw.js && node --test"
+    "check": "node --check src/server.mjs && node --check src/db.mjs && node --check src/learning.mjs && node --check src/fsrs-adapter.mjs && node --check src/attention.mjs && node --check src/block5-content.mjs && node --check src/block5x-content.mjs && node --check src/curriculum.mjs && node --check src/assignments.mjs && node --check src/speech-align.mjs && node --check src/speech-runtime.mjs && node --check src/speech-service.mjs && node --check src/tts-runtime.mjs && node --check src/writing-prompts.mjs && node --check src/writing-runtime.mjs && node --check src/writing-service.mjs && node --check src/immersion-content.mjs && node --check src/immersion-service.mjs && node --check src/planner.mjs && node --check src/xp-economy.mjs && node --check src/jw-content.mjs && node --check src/jw-service.mjs && node --check public/app.js && node --check public/curriculum.js && node --check public/assignment-summary.js && node --check public/assignments.js && node --check public/speech.js && node --check public/writing.js && node --check public/immersion.js && node --check public/planner.js && node --check public/planner-summary.js && node --check public/planner-launch.js && node --check public/jw.js && node --test"
   }
 }

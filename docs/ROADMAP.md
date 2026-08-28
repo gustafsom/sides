@@ -47,95 +47,78 @@ Os blocos têm entrega funcional independente. A linha de chegada definida é o 
 
 ### Expansão 5.1 — conteúdo mais que dobrado ✅
 
-- conjunto gerado passa a 1.480 entradas lexicais/expressões;
+- 1.480 entradas lexicais/expressões;
 - 640 frases/chunks;
 - 320 exercícios de gramática;
 - 200 itens de listening;
 - 104 textos graduados;
 - metas reais do banco: 1.200 / 600 / 300 / 200 / 100;
-- novos temas em todos os níveis A1–B2;
 - margem para deduplicação lexical.
 
 ## Bloco 6 — Trilha JW avançada e designações reais ✅
 
-- área **Minhas designações**;
+- **Minhas designações**;
 - leitura, comentário, estudante, discurso, ministério e outro;
 - referência curta, data/horário, tempo-alvo e notas próprias;
-- plano automático do dia atual até a data;
-- frequência crescente conforme a designação se aproxima;
-- fases fundamentos → construção → ensaio → revisão final;
-- cronômetro e gravação temporária no navegador;
-- histórico de ensaios;
-- confiança e rubricas;
-- prontidão 0–100;
-- rubricas mais fracas transformadas em foco do próximo ensaio;
-- próxima designação visível no painel principal;
-- designações incluídas no backup JSON;
+- plano fundamentos → construção → ensaio → revisão final;
+- histórico, confiança, rubricas e prontidão 0–100;
+- próxima designação visível no painel;
 - migração aditiva para `SIDES-DB-V5`;
-- nenhum texto oficial importado ou copiado automaticamente.
+- nenhum texto oficial importado automaticamente.
 
 ## Bloco 7 — Escuta e fala offline ✅
 
-- `whisper.cpp` local e opcional, com falha segura quando ausente;
-- instalador Windows separado, com build/modelo verificados por checksum;
-- conversão do áudio no navegador para WAV PCM16 mono 16 kHz, sem FFmpeg;
-- reconhecimento em espanhol e processamento somente local;
-- alinhamento palavra a palavra entre texto-alvo e hipótese reconhecida;
-- omissões, substituições, adições e diferenças de acentuação/grafia;
-- ritmo, pausas longas e silêncio como indicadores de fluência;
-- recomendações específicas para o próximo treino;
-- shadowing e leitura com alvos do currículo A1–B2;
-- texto próprio temporário para leituras/designações;
-- histórico de métricas e domínio adaptativo de fala;
-- áudio, transcrição e texto-alvo não são persistidos;
-- Piper opcional e SpeechSynthesis do navegador/SO como fallback;
+- `whisper.cpp` local e opcional;
+- instalador separado com checksum;
+- WAV PCM16 mono 16 kHz no navegador;
+- omissões, substituições, adições, ritmo e pausas;
+- histórico de métricas e domínio adaptativo;
+- áudio/transcrição/texto-alvo não persistidos;
+- Piper opcional + SpeechSynthesis fallback;
 - migração aditiva para `SIDES-DB-V6`.
 
 ## Bloco 8 — Gramática e escrita inteligente ✅
 
-- área **Escrita inteligente** em `/writing.html`;
-- 32 propostas originais, com 8 atividades por nível A1, A2, B1 e B2;
-- texto livre e propostas adaptativas por ponto fraco;
-- contextos cotidianos, viagem, trabalho, opinião, congregação e discursos;
-- análise sem salvar ou registro da tentativa;
-- regras locais SIDES sempre disponíveis;
-- LanguageTool local opcional e bloqueio fail-closed de URLs remotas;
-- categorias de concordância, verbos, preposições, pronomes, ser/estar, por/para, ortografia, acentuação, pontuação, registro e estilo;
-- explicação e ação pedagógica por padrão;
-- reescrita vinculada à tentativa anterior;
-- padrão que desaparece na reescrita é registrado como recuperado;
-- escrita integrada a `skill_mastery`, `skill_events`, caderno de erros e índice de atenção;
-- propostas limitadas a A1 antes do diagnóstico;
-- banco guarda apenas métricas e categorias, nunca o texto produzido/corrigido;
-- instalador opcional do LanguageTool 6.6 com checksum verificado e Java 17+;
+- `/writing.html`;
+- 32 propostas A1–B2 + texto livre;
+- regras SIDES e LanguageTool local opcional;
+- endpoint remoto bloqueado;
+- classificação pedagógica de padrões;
+- reescrita e recuperação de dificuldades;
+- texto produzido/corrigido não persistido;
 - migração aditiva para `SIDES-DB-V7`.
 
 ## Bloco 9 — Imersão e conversação prática ✅
 
-- área **Imersão** em `/immersion.html`;
-- 32 cenários ramificados originais, 8 por nível A1, A2, B1 e B2;
-- 16 histórias graduadas originais, 4 por nível;
-- cotidiano, viagem, alimentação, compras, trabalho, saúde, opinião e congregação;
-- resposta livre por texto ou resposta oral via Whisper local;
-- alternativas guiadas apenas como apoio;
-- objetivo comunicativo por turno e ramificação por intenção;
-- reparo explícito quando a intenção não é reconhecida, sem simular compreensão;
-- revisão transitória do Bloco 8 aplicada às respostas do turno;
-- plano imersivo de diálogo + história com cerca de 18 minutos;
-- meta de pelo menos 85% da produção em espanhol;
-- seleção adaptativa por nível, tema, conteúdo recente e habilidades fracas;
-- desconto de XP ao repetir o mesmo conteúdo em até 7 dias;
-- métricas de conversação integradas a `reviews`, `activity`, `skill_mastery`, `skill_events` e índice de atenção;
-- respostas, transcrições e áudio não são persistidos;
-- backup contém apenas estado e métricas de imersão;
+- `/immersion.html`;
+- 32 cenários ramificados e 16 histórias graduadas;
+- texto, opção guiada ou voz via Whisper local;
+- objetivo comunicativo e reparo explícito;
+- sessão de aproximadamente 18 minutos;
+- meta de ≥85% da produção em espanhol;
+- seleção adaptativa e proteção inicial contra repetição por XP;
+- respostas/transcrições/áudio não persistidos;
 - migração aditiva para `SIDES-DB-V8`.
 
-## Bloco 10 — Planejador diário e gamificação madura
+## Bloco 10 — Planejador diário e gamificação madura ✅
 
-- objetivo diário/semanal;
-- sessão montada automaticamente;
-- prioridade por revisões, fraquezas e designações próximas;
-- métricas por competência e proteção contra XP fácil/infinito.
+- área **Planejador diário** em `/planner.html`;
+- metas configuráveis de minutos por dia, minutos por semana, dias ativos e duração preferida da sessão;
+- padrão 20 min/dia, 120 min/semana, 5 dias/semana e sessão de 20 min;
+- **Seu treino de hoje** calculado dinamicamente;
+- prioridade combinada por dívida FSRS, designações próximas, índice de atenção e competências ausentes na semana;
+- dívida de revisão >7 dias e designação para o dia seguinte podem atingir prioridade máxima;
+- estimativa de tempo usando os registros próprios de core, escrita, fala, designações e imersão;
+- resumo do plano no dashboard principal;
+- acesso direto do item recomendado ao módulo correspondente;
+- `SIDES-XP-V2`: XP bruto preservado e XP efetivo calculado para gamificação madura;
+- retorno decrescente ao repetir o mesmo item em ≤1 h / ≤6 h / ≤24 h / ≤72 h;
+- teto de 500 XP efetivos/dia sem bloquear estudo ou domínio;
+- conquistas por meta diária, tempo semanal, dias ativos, equilíbrio de competências e revisões sob controle;
+- planos diários não são persistidos: são derivados do estado atual;
+- nova tabela `study_goals` e `plannerSchemaVersion=SIDES-PLANNER-V1`;
+- migração aditiva para `SIDES-DB-V9`;
+- API `SIDES-API-V8` e export `SIDES-EXPORT-V8`.
 
 ## Bloco 11 — Integridade, backup e recuperação
 

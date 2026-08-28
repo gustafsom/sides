@@ -8,6 +8,7 @@ import { ensureAssignmentsSchema } from './assignments.mjs';
 import { ensureSpeechSchema } from './speech-service.mjs';
 import { ensureWritingSchema } from './writing-service.mjs';
 import { ensureImmersionSchema } from './immersion-service.mjs';
+import { ensurePlannerSchema } from './planner.mjs';
 
 export function openDatabase(path = resolve('data/sides.sqlite')) {
   mkdirSync(dirname(path), { recursive: true });
@@ -20,7 +21,8 @@ export function openDatabase(path = resolve('data/sides.sqlite')) {
   ensureSpeechSchema(db);
   ensureWritingSchema(db);
   ensureImmersionSchema(db);
-  setMeta(db,'schemaVersion','SIDES-DB-V8');
+  ensurePlannerSchema(db);
+  setMeta(db,'schemaVersion','SIDES-DB-V9');
   return db;
 }
 
@@ -216,7 +218,7 @@ function seed(db) {
   for (const row of db.prepare('SELECT id,kind FROM learning_items').all()) ensureSrs.run(row.kind,row.id,epoch);
 
   const defaults = {
-    schemaVersion: 'SIDES-DB-V8',
+    schemaVersion: 'SIDES-DB-V9',
     placementLevel: 'UNASSESSED',
     placementCompleted: 'false',
     spanishVariant: 'es',

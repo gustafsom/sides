@@ -8,16 +8,17 @@ import { openDatabase } from '../src/db.mjs';
 import { dashboard, getVocabularyCard, nextLearningItem, progressDashboard, randomGrammar, submitGrammar, submitLearningItem, submitVocabulary } from '../src/service.mjs';
 import { SCHEDULER_ID, scheduleFsrs } from '../src/fsrs-adapter.mjs';
 
-test('V8 schema keeps FSRS, adaptive history, curriculum, assignments, speech, writing and immersion',()=>{
+test('V9 schema keeps FSRS, adaptive history, curriculum, assignments, speech, writing, immersion and planner',()=>{
   const db=openDatabase(':memory:');
-  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V8');
+  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V9');
   const columns=new Set(db.prepare('PRAGMA table_info(srs)').all().map(x=>x.name));
   for(const name of ['stability','difficulty','elapsed_days','scheduled_days','learning_steps','state']) assert.ok(columns.has(name));
-  for(const table of ['skill_events','curriculum_meta','jw_assignments','jw_assignment_practices','speech_attempts','writing_attempts','writing_issue_summary','immersion_sessions','immersion_turn_metrics'])
+  for(const table of ['skill_events','curriculum_meta','jw_assignments','jw_assignment_practices','speech_attempts','writing_attempts','writing_issue_summary','immersion_sessions','immersion_turn_metrics','study_goals'])
     assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(table));
+  assert.equal(db.prepare("SELECT value FROM meta WHERE key='plannerSchemaVersion'").get().value,'SIDES-PLANNER-V1');
 });
 
-test('real V2 database migration preserves study data and legacy review state through V8',()=>{
+test('real V2 database migration preserves study data and legacy review state through V9',()=>{
   const dir=mkdtempSync(join(tmpdir(),'sides-v2-'));
   const path=join(dir,'sides.sqlite');
   try{
@@ -44,13 +45,15 @@ test('real V2 database migration preserves study data and legacy review state th
     assert.equal(state.lapses,2);
     assert.equal(state.scheduler,'SIDES-SRS-V1');
     assert.equal(db.prepare("SELECT value FROM meta WHERE key='placementLevel'").get().value,'B1');
-    assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V8');
+    assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V9');
     assert.equal(db.prepare("SELECT value FROM meta WHERE key='assignmentSchemaVersion'").get().value,'SIDES-JW-ASSIGNMENTS-V1');
     assert.equal(db.prepare("SELECT value FROM meta WHERE key='speechSchemaVersion'").get().value,'SIDES-SPEECH-V1');
     assert.equal(db.prepare("SELECT value FROM meta WHERE key='writingSchemaVersion'").get().value,'SIDES-WRITING-V1');
     assert.equal(db.prepare("SELECT value FROM meta WHERE key='immersionSchemaVersion'").get().value,'SIDES-IMMERSION-V1');
+    assert.equal(db.prepare("SELECT value FROM meta WHERE key='plannerSchemaVersion'").get().value,'SIDES-PLANNER-V1');
     const activityCols=new Set(db.prepare('PRAGMA table_info(activity)').all().map(x=>x.name));
     assert.ok(activityCols.has('writing'));assert.ok(activityCols.has('immersion'));
+    assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='study_goals'").get());
     db.close();
   } finally { rmSync(dir,{recursive:true,force:true}); }
 });
