@@ -6,9 +6,9 @@ import { createSidesServer } from '../src/server.mjs';
 
 const NOW=new Date('2026-08-28T12:00:00Z');
 
-test('V9 preserves versioned assignment tables without audio persistence columns',()=>{
+test('V10 preserves versioned assignment tables without audio persistence columns',()=>{
   const db=openDatabase(':memory:');
-  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V9');
+  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V10');
   assert.equal(db.prepare("SELECT value FROM meta WHERE key='assignmentSchemaVersion'").get().value,'SIDES-JW-ASSIGNMENTS-V1');
   const assignmentCols=db.prepare('PRAGMA table_info(jw_assignments)').all().map(x=>x.name);
   const practiceCols=db.prepare('PRAGMA table_info(jw_assignment_practices)').all().map(x=>x.name);
@@ -59,9 +59,9 @@ test('overview prioritizes nearest future assignment and reports readiness total
 test('HTTP assignment API creates data and backup includes assignment history',async()=>{
   const db=openDatabase(':memory:');const server=createSidesServer({db,now:()=>NOW});await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve)});
   try{
-    const {port}=server.address(),base=`http://127.0.0.1:${port}`;const health=await fetch(`${base}/api/health`).then(r=>r.json());assert.equal(health.schema,'SIDES-API-V8');
+    const {port}=server.address(),base=`http://127.0.0.1:${port}`;const health=await fetch(`${base}/api/health`).then(r=>r.json());assert.equal(health.schema,'SIDES-API-V9');
     const created=await fetch(`${base}/api/jw/assignments`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'reading',title:'API',dueDate:'2026-09-01',targetSeconds:180})}).then(r=>r.json());assert.ok(created.id>0);
     await fetch(`${base}/api/jw/assignments/${created.id}/practice`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({durationMs:170000,confidence:4,ratings:{naturalidad:3}})});
-    const backup=await fetch(`${base}/api/export`).then(r=>r.json());assert.equal(backup.schemaVersion,'SIDES-EXPORT-V8');assert.equal(backup.tables.jw_assignments.length,1);assert.equal(backup.tables.jw_assignment_practices.length,1);assert.equal('audio' in backup.tables.jw_assignment_practices[0],false);
+    const backup=await fetch(`${base}/api/export`).then(r=>r.json());assert.equal(backup.schemaVersion,'SIDES-EXPORT-V9');assert.equal(backup.tables.jw_assignments.length,1);assert.equal(backup.tables.jw_assignment_practices.length,1);assert.equal('audio' in backup.tables.jw_assignment_practices[0],false);
   } finally {await new Promise(resolve=>server.close(resolve));}
 });
