@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { openDatabase } from '../src/db.mjs';
-import { dashboard, getVocabularyCard, placementItems, submitPlacement, submitVocabulary } from '../src/service.mjs';
+import { dashboard, dailySession, getVocabularyCard, placementItems, submitPlacement, submitVocabulary, updatePreferences } from '../src/service.mjs';
 
 test('database seeds and review updates local progress',()=>{
   const db=openDatabase(':memory:');
@@ -24,4 +24,28 @@ test('placement persists a calibrated level',()=>{
   const result=submitPlacement(db,{answers},new Date('2026-08-27T12:00:00Z'));
   assert.equal(result.level,'B2');
   assert.equal(dashboard(db).placement.completed,true);
+});
+
+test('errors become adaptive mastery signals and resolve after recovery',()=>{
+  const db=openDatabase(':memory:');
+  const now=new Date('2026-08-27T12:00:00Z');
+  const card=getVocabularyCard(db,now);
+  submitVocabulary(db,{id:card.id,answer:'resposta errada',rating:1},now);
+  let dash=dashboard(db,now);
+  assert.equal(dash.insights.openErrors,1);
+  assert.ok(dash.insights.weakestSkills.length>=1);
+  const retry=new Date('2026-08-28T12:00:00Z');
+  submitVocabulary(db,{id:card.id,answer:card.spanish,rating:3},retry);
+  dash=dashboard(db,retry);
+  assert.equal(dash.insights.openErrors,0);
+});
+
+test('unassessed sessions stay at A1 and language variant is validated',()=>{
+  const db=openDatabase(':memory:');
+  const session=dailySession(db,20);
+  assert.ok(session.length>0);
+  assert.ok(session.every(x=>x.level==='A1'));
+  assert.equal(updatePreferences(db,{spanishVariant:'es-MX'}).spanishVariant,'es-MX');
+  assert.equal(dashboard(db).preferences.spanishVariant,'es-MX');
+  assert.throws(()=>updatePreferences(db,{spanishVariant:'invalid'}),/SPANISH_VARIANT_INVALID/);
 });
