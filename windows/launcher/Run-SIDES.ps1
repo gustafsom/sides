@@ -11,11 +11,42 @@ function Test-SidesHealth([string]$Url){
     return ($r.ok -eq $true -and $r.app -eq 'SIDES' -and ([string]$r.schema).StartsWith('SIDES-API-'))
   }catch{return $false}
 }
+function Test-LanguageToolLocal{
+  try{$r=Invoke-WebRequest -Uri 'http://127.0.0.1:8081/v2/languages' -UseBasicParsing -TimeoutSec 1;return ($r.StatusCode -eq 200)}catch{return $false}
+}
+function Get-JavaMajor{
+  $java=Get-Command java -ErrorAction SilentlyContinue;if(-not $java){return 0}
+  $text=(& java -version 2>&1|Out-String)
+  if($text -match 'version\s+"([0-9]+)'){return [int]$Matches[1]}
+  if($text -match 'openjdk\s+([0-9]+)'){return [int]$Matches[1]}
+  return 0
+}
+function Configure-OptionalEngines{
+  $whisperRoot=Join-Path $InstallRoot 'tools\whisper'
+  $whisperCli=Get-ChildItem -LiteralPath $whisperRoot -Filter 'whisper-cli.exe' -File -Recurse -ErrorAction SilentlyContinue|Select-Object -First 1
+  $whisperModel=Join-Path $InstallRoot 'models\whisper\ggml-base.bin'
+  if($whisperCli -and (Test-Path -LiteralPath $whisperModel)){
+    $env:SIDES_WHISPER_BIN=$whisperCli.FullName;$env:SIDES_WHISPER_MODEL=$whisperModel
+  }
+  $ltRoot=Join-Path $InstallRoot 'tools\languagetool';$ltJar=Join-Path $ltRoot 'languagetool-server.jar'
+  if(Test-Path -LiteralPath $ltJar){
+    $ready=Test-LanguageToolLocal
+    if(-not $ready -and (Get-JavaMajor) -ge 17){
+      $java=(Get-Command java).Source
+      $args=@('-cp','languagetool-server.jar','org.languagetool.server.HTTPServer','--port','8081','--config','server.properties')
+      Start-Process -FilePath $java -ArgumentList $args -WorkingDirectory $ltRoot -WindowStyle Hidden|Out-Null
+      for($i=0;$i -lt 15;$i++){Start-Sleep -Milliseconds 300;if(Test-LanguageToolLocal){$ready=$true;break}}
+    }
+    if($ready){$env:SIDES_LANGUAGETOOL_URL='http://127.0.0.1:8081'}
+  }
+  $piperModel=Get-ChildItem -LiteralPath (Join-Path $InstallRoot 'models\piper') -Filter '*.onnx' -File -ErrorAction SilentlyContinue|Select-Object -First 1
+  if($piperModel){$env:SIDES_PIPER_MODEL=$piperModel.FullName}
+}
 
 try{
   if(-not (Test-Path -LiteralPath $statePath)){throw 'Instalacao do SIDES incompleta: install-state.json ausente.'}
   $state=Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
-  if($state.schema -ne 'SIDES-INSTALL-V1'){throw 'Estado de instalacao incompatível.'}
+  if($state.schema -ne 'SIDES-INSTALL-V1'){throw 'Estado de instalacao incompativel.'}
   $current=Join-Path $InstallRoot ([string]$state.current)
   $node=Join-Path $current 'runtime\node.exe'
   $server=Join-Path $current 'src\server.mjs'
@@ -26,11 +57,10 @@ try{
 
   $port=4317;$url="http://127.0.0.1:$port"
   if(Test-SidesHealth $url){Start-Process $url;exit 0}
-  try{
-    $occupied=Get-NetTCPConnection -LocalAddress '127.0.0.1' -LocalPort $port -State Listen -ErrorAction SilentlyContinue
-    if($occupied){throw "A porta local $port ja esta em uso por outro programa."}
-  }catch [Microsoft.PowerShell.Commands.WriteErrorException] { throw }
+  $occupied=Get-NetTCPConnection -LocalAddress '127.0.0.1' -LocalPort $port -State Listen -ErrorAction SilentlyContinue
+  if($occupied){throw "A porta local $port ja esta em uso por outro programa."}
 
+  Configure-OptionalEngines
   $env:SIDES_PORT="$port"
   $env:SIDES_DATA_DIR=$dataDir
   $process=Start-Process -FilePath $node -ArgumentList ('"'+$server+'"') -WorkingDirectory $InstallRoot -WindowStyle Hidden -PassThru
