@@ -1,76 +1,69 @@
-# Currículo A1–B2 — Bloco 5
+# Currículo A1–B2 — Bloco 5 + expansão 5.1
 
 ## Objetivo
 
-Transformar o SIDES de um MVP com conteúdo-semente em um sistema capaz de sustentar estudo diário prolongado, mantendo adaptação, explicações e revisão espaçada.
+Sustentar estudo diário prolongado com volume amplo de conteúdo, mantendo adaptação, explicações, FSRS e progressão por nível.
 
 ## Pacote
 
-`SIDES-CURRICULUM-B5-V1`
+`SIDES-CURRICULUM-B5-V2`
 
-Conteúdo adicionado:
+### Conjunto curricular gerado
 
-| Tipo | Quantidade |
+| Tipo | Quantidade no conjunto |
 |---|---:|
-| Vocabulário curricular | 640 |
+| Vocabulário/expressões | 1.480 |
+| Frases/chunks | 640 |
+| Gramática | 320 |
+| Listening/ditado | 200 |
+| Leitura graduada | 104 |
+
+A expansão 5.1 acrescenta ao pacote anterior:
+
+| Tipo | Conteúdo novo |
+|---|---:|
+| Vocabulário/expressões | 840 |
 | Frases/chunks | 320 |
 | Gramática | 160 |
 | Listening/ditado | 100 |
 | Leitura graduada | 52 |
 
-O conteúdo existente dos blocos anteriores continua preservado e é somado a esse pacote.
+As 200 expressões lexicais adicionais dão margem para deduplicação de termos simples já presentes no banco. O dashboard considera o banco real e exige pelo menos 1.200 / 600 / 300 / 200 / 100 itens por família para considerar as metas dobradas atendidas.
 
 ## Níveis
 
-- **A1 — Fundamentos:** necessidades imediatas, rotina, cidade, compras, alimentação, reunião e leitura simples.
-- **A2 — Autonomia básica:** viagem, serviços, saúde, trabalho, estudo, relações e experiências.
-- **B1 — Independência:** opinião, comunicação, mídia, sociedade, ambiente, projetos e explicação de ideias.
-- **B2 — Precisão e nuance:** argumentação, valores, negociação, liderança, aprendizagem e discurso estruturado.
+- **A1 — Fundamentos:** necessidades imediatas, rotina, clima, roupas, tecnologia, orientação e conversas simples.
+- **A2 — Autonomia básica:** viagem, serviços, saúde, tarefas domésticas, transporte, trabalho e conversação na congregação.
+- **B1 — Independência:** opinião, carreira, cultura, bem-estar, colaboração, feedback e explicação de ideias.
+- **B2 — Precisão e nuance:** argumentação, negociação, liderança, análise de risco, comunicação formal e pensamento crítico.
 
 ## Metadados
 
-Cada item do pacote recebe:
-
-- `level`;
-- `topic`;
-- `difficulty`;
-- `prerequisites`;
-- `pack`;
-- uma chave curricular estável.
-
-Os metadados ficam em `curriculum_meta`, separados das tabelas históricas. Isso permite ampliar o currículo sem reescrever ou apagar progresso.
+Cada item recebe `level`, `topic`, `difficulty`, `prerequisites`, `pack` e uma chave curricular estável. Os metadados ficam em `curriculum_meta`, separados das tabelas históricas.
 
 ## Pré-requisitos
 
-Pré-requisitos são um **sinal de prontidão**, não uma trava.
+Pré-requisitos são um **sinal de prontidão**, não uma trava. O domínio em `skill_mastery` influencia a ordenação, enquanto ausência de histórico mantém uma prontidão neutra e conservadora.
 
-Quando um item avançado depende de uma habilidade anterior, o SIDES consulta `skill_mastery`. Domínio mais alto aumenta a prioridade. Quando ainda não há histórico, usa-se uma prontidão neutra conservadora, permitindo que o usuário continue estudando.
+## Migração e idempotência
 
-## Migração
+O banco global passa para `SIDES-DB-V5`; o currículo mantém seu próprio `curriculumSchemaVersion` e o pacote `SIDES-CURRICULUM-B5-V2`.
 
-O banco passa para `SIDES-DB-V4`.
+Ao trocar o pacote V1 pelo V2:
 
-A migração:
-
-1. mantém tabelas e dados anteriores;
-2. cria `curriculum_meta`;
-3. insere apenas conteúdo inexistente;
-4. usa chaves estáveis para tornar o seed idempotente;
-5. mantém os estados FSRS antigos intactos;
-6. não modifica gravações, backups ou dados pessoais.
+1. o SIDES detecta a nova versão de `curriculumPackVersion`;
+2. executa seed transacional;
+3. reutiliza itens textualmente idênticos já existentes;
+4. insere apenas conteúdo novo;
+5. atualiza metadados para o pacote V2;
+6. mantém estados FSRS e histórico;
+7. uma nova inicialização não duplica os itens;
+8. o seed curricular não altera nem rebaixa a versão global do banco.
 
 ## Dashboard
 
-A tela principal mostra um mapa curricular com:
-
-- metas mínimas;
-- total disponível;
-- cobertura por nível;
-- distribuição por temas;
-- status de conclusão do pacote.
+O mapa curricular apresenta metas mínimas, total real disponível, cobertura por nível, temas e conclusão do pacote.
 
 ## Segurança e direitos autorais
 
-O conteúdo do Bloco 5 é escrito especificamente para o SIDES.
-
-A Trilha JW continua separada: o SIDES pode treinar vocabulário, habilidades e preparação, mas não copia nem armazena textos protegidos do JW.org/JW Library.
+Todo o conteúdo curricular é produzido especificamente para o SIDES. A Trilha JW continua separada e não copia nem armazena automaticamente textos protegidos do JW.org/JW Library.
