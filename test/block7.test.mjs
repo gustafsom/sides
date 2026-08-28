@@ -40,9 +40,9 @@ test('speech metrics expose pace and pause indicators without pretending to scor
   assert.ok(m.flags.includes('pace-slow'));
 });
 
-test('V7 preserves speech metrics only, never audio transcript or expected text',()=>{
+test('V8 preserves speech metrics only, never audio transcript or expected text',()=>{
   const db=openDatabase(':memory:');
-  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V7');
+  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V8');
   assert.equal(db.prepare("SELECT value FROM meta WHERE key='speechSchemaVersion'").get().value,'SIDES-SPEECH-V1');
   const cols=db.prepare('PRAGMA table_info(speech_attempts)').all().map(x=>x.name);
   assert.equal(cols.some(x=>/audio|blob|transcript|expected_text|recognized_text/i.test(x)),false);
@@ -117,7 +117,7 @@ test('HTTP speech API supports manual comparison and backup stores metrics only'
     const wrongType=await fetch(`${base}/api/speech/transcribe`,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
     assert.equal(wrongType.status,400);
     const backup=await fetch(`${base}/api/export`).then(r=>r.json());
-    assert.equal(backup.schemaVersion,'SIDES-EXPORT-V6');
+    assert.equal(backup.schemaVersion,'SIDES-EXPORT-V7');
     assert.equal(backup.tables.speech_attempts.length,1);
     const row=backup.tables.speech_attempts[0];
     assert.equal(Object.keys(row).some(x=>/audio|blob|transcript|expected_text/i.test(x)),false);
