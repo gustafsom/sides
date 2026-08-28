@@ -34,28 +34,46 @@ Os blocos têm entrega funcional independente. A linha de chegada definida é o 
 - índice de atenção pedagógica;
 - explicações e ações recomendadas;
 - dashboard de evolução;
-- controle de dívida de revisão para limitar conteúdo novo quando necessário.
+- controle de dívida de revisão.
 
 ## Bloco 5 — Currículo A1–B2 completo ✅
 
-- 640 entradas curriculares de vocabulário;
-- 320 frases/chunks;
-- 160 exercícios de gramática;
-- 100 itens de listening;
-- 52 textos graduados de leitura;
-- distribuição equilibrada A1, A2, B1 e B2;
+- currículo original A1–B2;
 - metadados de dificuldade, tema e pré-requisitos;
-- pré-requisitos usados como sinal de prontidão, sem bloqueio rígido;
-- mapa curricular no dashboard;
-- seed idempotente e migração aditiva para `SIDES-DB-V4`;
-- conteúdo suficiente para uso diário prolongado.
+- sinal de prontidão sem bloqueio rígido;
+- mapa curricular;
+- seed idempotente;
+- migração aditiva até `SIDES-DB-V4`.
 
-## Bloco 6 — Trilha JW avançada e designações reais
+### Expansão 5.1 — conteúdo mais que dobrado ✅
 
-- Minhas designações;
-- plano automático de preparação até a data;
-- histórico de ensaios e evolução;
-- leitura, comentários, discursos e preparação direcionada.
+- conjunto gerado passa a 1.480 entradas lexicais/expressões;
+- 640 frases/chunks;
+- 320 exercícios de gramática;
+- 200 itens de listening;
+- 104 textos graduados;
+- metas reais do banco: 1.200 / 600 / 300 / 200 / 100;
+- novos temas em todos os níveis A1–B2;
+- 200 expressões adicionais dão margem para deduplicação lexical.
+
+## Bloco 6 — Trilha JW avançada e designações reais ✅
+
+- área **Minhas designações**;
+- leitura, comentário, estudante, discurso, ministério e outro;
+- referência curta, data/horário, tempo-alvo e notas próprias;
+- plano automático do dia atual até a data;
+- frequência crescente conforme a designação se aproxima;
+- fases fundamentos → construção → ensaio → revisão final;
+- cronômetro e gravação temporária no navegador;
+- histórico de ensaios;
+- confiança e rubricas;
+- prontidão 0–100;
+- rubricas mais fracas transformadas em foco do próximo ensaio;
+- status planejada, praticando, pronta, concluída ou cancelada;
+- próxima designação visível no painel principal;
+- designações incluídas no backup JSON;
+- migração aditiva para `SIDES-DB-V5`;
+- nenhum texto oficial importado ou copiado automaticamente.
 
 ## Bloco 7 — Escuta e fala offline
 
