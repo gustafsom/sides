@@ -9,5 +9,6 @@ Thumbs.db
 .env.*
 !.env.example
 tools/whisper/
+tools/languagetool/
 models/whisper/
 models/piper/
