@@ -11,6 +11,8 @@ import { speechRuntimeStatus, transcribeWhisper } from './speech-runtime.mjs';
 import { piperStatus, synthesizePiper } from './tts-runtime.mjs';
 import { checkWriting, nextWritingPrompt, submitWriting, writingOverview, writingStatus } from './writing-service.mjs';
 import { abandonImmersion, getImmersionSession, immersionOverview, immersionPlan, respondImmersion, startImmersion } from './immersion-service.mjs';
+import { plannerOverview, studyGoals, updateStudyGoals } from './planner.mjs';
+import { effectiveXpReport } from './xp-economy.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('../', import.meta.url)));
 const PUBLIC = join(ROOT,'public');
@@ -56,8 +58,8 @@ async function staticFile(req,res) {
 
 function extendedExport(db) {
   const data=exportData(db);
-  data.schemaVersion='SIDES-EXPORT-V7';
-  for(const table of ['jw_assignments','jw_assignment_practices','speech_attempts','writing_attempts','writing_issue_summary','immersion_sessions','immersion_turn_metrics']){
+  data.schemaVersion='SIDES-EXPORT-V8';
+  for(const table of ['jw_assignments','jw_assignment_practices','speech_attempts','writing_attempts','writing_issue_summary','immersion_sessions','immersion_turn_metrics','study_goals']){
     const exists=db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(table);
     if(exists)data.tables[table]=db.prepare(`SELECT * FROM ${table}`).all();
   }
@@ -68,10 +70,14 @@ export function createSidesServer({db=openDatabase(), now=()=>new Date(), writin
   return createServer(async (req,res)=>{
     try {
       const url = new URL(req.url,'http://localhost');
-      if (url.pathname === '/api/health' && req.method==='GET') return json(res,200,{ok:true,app:'SIDES',schema:'SIDES-API-V7',time:now().toISOString()});
+      if (url.pathname === '/api/health' && req.method==='GET') return json(res,200,{ok:true,app:'SIDES',schema:'SIDES-API-V8',time:now().toISOString()});
       if (url.pathname === '/api/dashboard' && req.method==='GET') return json(res,200,dashboard(db,now()));
       if (url.pathname === '/api/progress' && req.method==='GET') return json(res,200,progressDashboard(db,now(),Number(url.searchParams.get('days')||30)));
       if (url.pathname === '/api/curriculum' && req.method==='GET') return json(res,200,curriculumStatus(db));
+      if (url.pathname === '/api/planner/today' && req.method==='GET') return json(res,200,plannerOverview(db,now()));
+      if (url.pathname === '/api/planner/goals' && req.method==='GET') return json(res,200,studyGoals(db));
+      if (url.pathname === '/api/planner/goals' && req.method==='POST') return json(res,200,updateStudyGoals(db,await body(req),now()));
+      if (url.pathname === '/api/rewards' && req.method==='GET') return json(res,200,effectiveXpReport(db,now()));
       if (url.pathname === '/api/vocabulary/next' && req.method==='GET') return json(res,200,{item:getVocabularyCard(db,now())});
       if (url.pathname === '/api/vocabulary/check' && req.method==='POST') return json(res,200,checkVocabulary(db,await body(req)));
       if (url.pathname === '/api/vocabulary/review' && req.method==='POST') return json(res,200,submitVocabulary(db,await body(req),now()));
