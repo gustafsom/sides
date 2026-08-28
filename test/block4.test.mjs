@@ -8,13 +8,14 @@ import { openDatabase } from '../src/db.mjs';
 import { dashboard, getVocabularyCard, nextLearningItem, progressDashboard, randomGrammar, submitGrammar, submitLearningItem, submitVocabulary } from '../src/service.mjs';
 import { SCHEDULER_ID, scheduleFsrs } from '../src/fsrs-adapter.mjs';
 
-test('V3 schema adds FSRS state and adaptive event history without changing existing tables',()=>{
+test('V4 schema keeps FSRS state and adaptive event history while adding the curriculum pack',()=>{
   const db=openDatabase(':memory:');
-  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V3');
+  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V4');
   const columns=new Set(db.prepare('PRAGMA table_info(srs)').all().map(x=>x.name));
   for(const name of ['stability','difficulty','elapsed_days','scheduled_days','learning_steps','state']) assert.ok(columns.has(name));
   assert.ok(db.prepare('SELECT COUNT(*) n FROM learning_items').get().n>=20);
   assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='skill_events'").get());
+  assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='curriculum_meta'").get());
 });
 
 test('real V2 database migration preserves study data and legacy review state',()=>{
@@ -44,7 +45,7 @@ test('real V2 database migration preserves study data and legacy review state',(
     assert.equal(state.lapses,2);
     assert.equal(state.scheduler,'SIDES-SRS-V1');
     assert.equal(db.prepare("SELECT value FROM meta WHERE key='placementLevel'").get().value,'B1');
-    assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V3');
+    assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V4');
     const columns=new Set(db.prepare('PRAGMA table_info(srs)').all().map(x=>x.name));
     assert.ok(columns.has('stability'));
     assert.ok(columns.has('difficulty'));

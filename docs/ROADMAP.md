@@ -25,7 +25,7 @@ Os blocos têm entrega funcional independente. A linha de chegada definida é o 
 - rubricas de autoavaliação;
 - links oficiais sem incorporar conteúdo protegido.
 
-## Bloco 4 — Motor de aprendizagem definitivo ✅ após gate do PR
+## Bloco 4 — Motor de aprendizagem definitivo ✅
 
 - FSRS estável e migração progressiva do SRS antigo;
 - frases/chunks;
@@ -36,10 +36,18 @@ Os blocos têm entrega funcional independente. A linha de chegada definida é o 
 - dashboard de evolução;
 - controle de dívida de revisão para limitar conteúdo novo quando necessário.
 
-## Bloco 5 — Currículo A1–B2 completo
+## Bloco 5 — Currículo A1–B2 completo ✅
 
-- expandir vocabulário, chunks, gramática, listening e leitura;
+- 640 entradas curriculares de vocabulário;
+- 320 frases/chunks;
+- 160 exercícios de gramática;
+- 100 itens de listening;
+- 52 textos graduados de leitura;
+- distribuição equilibrada A1, A2, B1 e B2;
 - metadados de dificuldade, tema e pré-requisitos;
+- pré-requisitos usados como sinal de prontidão, sem bloqueio rígido;
+- mapa curricular no dashboard;
+- seed idempotente e migração aditiva para `SIDES-DB-V4`;
 - conteúdo suficiente para uso diário prolongado.
 
 ## Bloco 6 — Trilha JW avançada e designações reais

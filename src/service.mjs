@@ -2,6 +2,7 @@ import { answerQuality, dailyQuest, levelFromXp, selectInterleavedSession, xpFor
 import { getMeta, setMeta } from './db.mjs';
 import { attentionReport, guidanceFor, progressDashboard as buildProgressDashboard } from './attention.mjs';
 import { scheduleFsrs } from './fsrs-adapter.mjs';
+import { curriculumMeta, curriculumOverview, prerequisiteReadiness, rankByReadiness } from './curriculum.mjs';
 
 const pad2 = (n) => String(n).padStart(2,'0');
 export const todayKey = (date = new Date()) => `${date.getFullYear()}-${pad2(date.getMonth()+1)}-${pad2(date.getDate())}`;
@@ -108,6 +109,19 @@ function reviewPressure(db,now=new Date()) {
   return {reviewedDue,freezeNew:reviewedDue>=30};
 }
 
+function attachCurriculum(db,itemType,row) {
+  if(!row)return null;
+  const meta=curriculumMeta(db,itemType,row.id);
+  return meta?{...row,curriculum:{level:meta.level,topic:meta.topic,difficulty:meta.difficulty,prerequisites:meta.prerequisites,readiness:Number(prerequisiteReadiness(db,itemType,row.id).toFixed(2))}}:row;
+}
+
+function chooseCandidate(db,itemType,rows) {
+  if(!rows.length)return null;
+  const reviewed=rows.filter(x=>Number(x.reps||0)>0);
+  if(reviewed.length)return attachCurriculum(db,itemType,reviewed[0]);
+  return attachCurriculum(db,itemType,rankByReadiness(db,itemType,rows)[0]);
+}
+
 function vocabularyHelp(card,quality) {
   if(quality.status==='correct') return null;
   if(quality.status==='accent') return {
@@ -146,6 +160,10 @@ export function errorNotebook(db, limit=30) {
     FROM error_log WHERE resolved_at IS NULL ORDER BY created_at DESC LIMIT ?`).all(Math.min(100,Math.max(1,Number(limit||30))));
 }
 
+export function curriculumStatus(db) {
+  return curriculumOverview(db);
+}
+
 export function dashboard(db, now = new Date()) {
   const day = ensureActivity(db, todayKey(now));
   const total = totalStats(db);
@@ -168,7 +186,8 @@ export function dashboard(db, now = new Date()) {
     reviewPressure:reviewPressure(db,now),
     quest,
     achievements: computeAchievements({ total, currentStreak, correctRate }),
-    insights: learningInsights(db,now)
+    insights: learningInsights(db,now),
+    curriculum:curriculumOverview(db)
   };
 }
 
@@ -180,11 +199,11 @@ export function getVocabularyCard(db, now = new Date()) {
   const level = getMeta(db,'placementLevel','A1');
   const maxLevel = level === 'UNASSESSED' ? 'A1' : level;
   const pressure=reviewPressure(db,now);
-  const row = db.prepare(`SELECT v.*, s.*
+  const rows = db.prepare(`SELECT v.*, s.*
     FROM srs s JOIN vocabulary v ON v.id=s.item_id
     WHERE s.item_type='vocabulary' AND s.due_at <= ? AND v.level <= ? ${pressure.freezeNew?'AND s.reps>0':''}
-    ORDER BY s.due_at ASC, s.reps DESC, v.id ASC LIMIT 1`).get(now.toISOString(),maxLevel);
-  return row || null;
+    ORDER BY s.due_at ASC, s.reps DESC, v.id ASC LIMIT 25`).all(now.toISOString(),maxLevel);
+  return chooseCandidate(db,'vocabulary',rows);
 }
 
 export function checkVocabulary(db, payload) {
@@ -206,7 +225,8 @@ export function submitVocabulary(db, payload, now = new Date()) {
   const currentStreak = streak(db, now);
   const correct=quality.score>=0.8;
   const xp = xpForAttempt({ correct, mode:'vocabulary', rating, streak:currentStreak });
-  recordAttempt(db,{itemType:'vocabulary',itemId:id,mode:'vocabulary',skillType:'vocabulary',skillKey:card.tags||card.level,errorKind:quality.status,rating,correct,responseMs:Number(payload.responseMs||0),xp,now});
+  const meta=curriculumMeta(db,'vocabulary',id);
+  recordAttempt(db,{itemType:'vocabulary',itemId:id,mode:'vocabulary',skillType:'vocabulary',skillKey:meta?.topic||card.tags||card.level,errorKind:quality.status,rating,correct,responseMs:Number(payload.responseMs||0),xp,now});
   return { quality, expected: card.spanish, example: card.example_es, translation: card.portuguese, help:vocabularyHelp(card,quality), nextDueAt: next.dueAt, intervalDays: next.intervalDays, scheduler:next.scheduler, xp };
 }
 
@@ -219,9 +239,10 @@ export function nextLearningItem(db,kind='chunk',now=new Date(),skill=null) {
     FROM learning_items l JOIN srs s ON s.item_type=l.kind AND s.item_id=l.id
     WHERE l.kind=? AND l.level<=? AND s.due_at<=? ${skill?'AND l.skill=?':''} ${pressure.freezeNew?'AND s.reps>0':''}
     ORDER BY (SELECT COUNT(*) FROM error_log e WHERE e.item_type=l.kind AND e.item_id=l.id AND e.resolved_at IS NULL) DESC,
-      s.due_at ASC,s.reps DESC,l.id ASC LIMIT 1`);
+      s.due_at ASC,s.reps DESC,l.id ASC LIMIT 30`);
   const args=skill?[safeKind,maxLevel,now.toISOString(),String(skill)]:[safeKind,maxLevel,now.toISOString()];
-  return row.get(...args)||null;
+  const rows=row.all(...args);
+  return chooseCandidate(db,safeKind,rows);
 }
 
 export function submitLearningItem(db,payload,now=new Date()) {
@@ -246,11 +267,18 @@ export function submitLearningItem(db,payload,now=new Date()) {
 export function randomGrammar(db,skill=null) {
   const level = getMeta(db,'placementLevel','A1');
   const maxLevel=level === 'UNASSESSED' ? 'A1' : level;
+  let rows;
   if(skill){
-    const targeted=db.prepare(`SELECT * FROM grammar_exercises WHERE level<=? AND skill=? ORDER BY RANDOM() LIMIT 1`).get(maxLevel,String(skill));
-    if(targeted)return targeted;
+    rows=db.prepare(`SELECT * FROM grammar_exercises WHERE level<=? AND skill=? ORDER BY RANDOM() LIMIT 30`).all(maxLevel,String(skill));
+  }else{
+    rows=db.prepare(`SELECT g.* FROM grammar_exercises g
+      LEFT JOIN skill_mastery m ON m.skill_type='grammar' AND m.skill_key=g.skill
+      WHERE g.level<=?
+      ORDER BY (SELECT COUNT(*) FROM error_log e WHERE e.item_type='grammar' AND e.item_id=g.id AND e.resolved_at IS NULL) DESC,
+        COALESCE(m.score,0.5) ASC,RANDOM() LIMIT 30`).all(maxLevel);
   }
-  return db.prepare(`SELECT * FROM grammar_exercises WHERE level <= ? ORDER BY RANDOM() LIMIT 1`).get(maxLevel) || db.prepare('SELECT * FROM grammar_exercises ORDER BY RANDOM() LIMIT 1').get();
+  const picked=rankByReadiness(db,'grammar',rows)[0]||db.prepare('SELECT * FROM grammar_exercises ORDER BY RANDOM() LIMIT 1').get();
+  return attachCurriculum(db,'grammar',picked);
 }
 
 export function submitGrammar(db, payload, now = new Date()) {
@@ -266,7 +294,11 @@ export function submitGrammar(db, payload, now = new Date()) {
 
 export function randomListening(db) {
   const level = getMeta(db,'placementLevel','A1');
-  return db.prepare('SELECT * FROM listening_items WHERE level <= ? ORDER BY RANDOM() LIMIT 1').get(level === 'UNASSESSED' ? 'A1' : level) || db.prepare('SELECT * FROM listening_items ORDER BY RANDOM() LIMIT 1').get();
+  const maxLevel=level === 'UNASSESSED' ? 'A1' : level;
+  const rows=db.prepare(`SELECT l.* FROM listening_items l
+    LEFT JOIN skill_mastery m ON m.skill_type='listening' AND m.skill_key=('listening-' || l.level)
+    WHERE l.level<=? ORDER BY COALESCE(m.score,0.5) ASC,RANDOM() LIMIT 30`).all(maxLevel);
+  return attachCurriculum(db,'listening',rankByReadiness(db,'listening',rows)[0]||rows[0]);
 }
 
 export function submitListening(db, payload, now = new Date()) {
@@ -275,13 +307,18 @@ export function submitListening(db, payload, now = new Date()) {
   const quality = answerQuality(payload.answer, item.text);
   const correct = quality.score >= 0.8;
   const xp = xpForAttempt({correct,mode:'listening',rating:correct?3:1,streak:streak(db, now)});
-  recordAttempt(db,{itemType:'listening',itemId:item.id,mode:'listening',skillType:'listening',skillKey:`listening-${item.level}`,errorKind:quality.status,rating:correct?3:1,correct,responseMs:Number(payload.responseMs||0),xp,now});
+  const meta=curriculumMeta(db,'listening',item.id);
+  recordAttempt(db,{itemType:'listening',itemId:item.id,mode:'listening',skillType:'listening',skillKey:meta?`${item.level}:${meta.topic}`:`listening-${item.level}`,errorKind:quality.status,rating:correct?3:1,correct,responseMs:Number(payload.responseMs||0),xp,now});
   return { quality, expected:item.text, translation:item.translation, help:listeningHelp(item,quality), xp };
 }
 
 export function randomReading(db) {
   const level = getMeta(db,'placementLevel','A1');
-  const item = db.prepare('SELECT * FROM reading_texts WHERE level <= ? ORDER BY RANDOM() LIMIT 1').get(level === 'UNASSESSED' ? 'A1' : level) || db.prepare('SELECT * FROM reading_texts ORDER BY RANDOM() LIMIT 1').get();
+  const maxLevel=level === 'UNASSESSED' ? 'A1' : level;
+  const rows=db.prepare(`SELECT r.* FROM reading_texts r
+    LEFT JOIN skill_mastery m ON m.skill_type='reading' AND m.skill_key=('reading-' || r.level)
+    WHERE r.level<=? ORDER BY COALESCE(m.score,0.5) ASC,RANDOM() LIMIT 24`).all(maxLevel);
+  const item=attachCurriculum(db,'reading',rankByReadiness(db,'reading',rows)[0]||rows[0]);
   if (!item) return null;
   return { ...item, questions: JSON.parse(item.questions_json).map((q,i)=>({index:i,q:q.q})) };
 }
@@ -295,8 +332,10 @@ export function submitReading(db, payload, now = new Date()) {
   const correct = details.filter(x=>x.score>=0.8).length;
   const isCorrect = correct >= Math.ceil(questions.length*0.7);
   const xp = xpForAttempt({correct:isCorrect,mode:'reading',rating:isCorrect?3:1,streak:streak(db, now)});
-  recordAttempt(db,{itemType:'reading',itemId:item.id,mode:'reading',skillType:'reading',skillKey:`reading-${item.level}`,errorKind:isCorrect?'correct':'comprehension',rating:isCorrect?3:1,correct:isCorrect,responseMs:Number(payload.responseMs||0),xp,now});
-  return { correct, total:questions.length, details, guidance:isCorrect?null:guidanceFor('reading',`reading-${item.level}`), xp };
+  const meta=curriculumMeta(db,'reading',item.id);
+  const skillKey=meta?`${item.level}:${meta.topic}`:`reading-${item.level}`;
+  recordAttempt(db,{itemType:'reading',itemId:item.id,mode:'reading',skillType:'reading',skillKey,errorKind:isCorrect?'correct':'comprehension',rating:isCorrect?3:1,correct:isCorrect,responseMs:Number(payload.responseMs||0),xp,now});
+  return { correct, total:questions.length, details, guidance:isCorrect?null:guidanceFor('reading',skillKey), xp };
 }
 
 export function placementItems(db) {
@@ -340,29 +379,33 @@ export function dailySession(db, limit=20) {
   const maxLevel = level === 'UNASSESSED' ? 'A1' : level;
   const pressure=reviewPressure(db,now);
   const freeze=pressure.freezeNew?'AND s.reps>0':'';
-  const dueVocabulary = db.prepare(`SELECT v.id,v.spanish,v.portuguese,v.example_es,v.level FROM srs s JOIN vocabulary v ON v.id=s.item_id WHERE s.item_type='vocabulary' AND s.due_at<=? AND v.level<=? ${freeze} ORDER BY s.due_at LIMIT 30`).all(nowIso,maxLevel);
-  const learning = db.prepare(`SELECT l.id,l.kind,l.prompt,l.level,l.skill FROM learning_items l JOIN srs s ON s.item_type=l.kind AND s.item_id=l.id
+  const dueVocabulary = db.prepare(`SELECT v.id,v.spanish,v.portuguese,v.example_es,v.level,s.reps FROM srs s JOIN vocabulary v ON v.id=s.item_id WHERE s.item_type='vocabulary' AND s.due_at<=? AND v.level<=? ${freeze} ORDER BY s.due_at LIMIT 30`).all(nowIso,maxLevel);
+  const learning = db.prepare(`SELECT l.id,l.kind,l.prompt,l.level,l.skill,s.reps FROM learning_items l JOIN srs s ON s.item_type=l.kind AND s.item_id=l.id
     WHERE l.level<=? AND s.due_at<=? ${freeze}
-    ORDER BY (SELECT COUNT(*) FROM error_log e WHERE e.item_type=l.kind AND e.item_id=l.id AND e.resolved_at IS NULL) DESC,s.due_at LIMIT 8`).all(maxLevel,nowIso);
+    ORDER BY (SELECT COUNT(*) FROM error_log e WHERE e.item_type=l.kind AND e.item_id=l.id AND e.resolved_at IS NULL) DESC,s.due_at LIMIT 16`).all(maxLevel,nowIso);
   const grammar = db.prepare(`SELECT g.id,g.prompt,g.level,g.skill
     FROM grammar_exercises g
     LEFT JOIN skill_mastery m ON m.skill_type='grammar' AND m.skill_key=g.skill
     WHERE g.level <= ?
     ORDER BY (SELECT COUNT(*) FROM error_log e WHERE e.item_type='grammar' AND e.item_id=g.id AND e.resolved_at IS NULL) DESC,
-      COALESCE(m.score,0.5) ASC, RANDOM() LIMIT 6`).all(maxLevel);
+      COALESCE(m.score,0.5) ASC, RANDOM() LIMIT 12`).all(maxLevel);
   const listening = db.prepare(`SELECT l.id,l.text,l.level
     FROM listening_items l
     LEFT JOIN skill_mastery m ON m.skill_type='listening' AND m.skill_key=('listening-' || l.level)
     WHERE l.level <= ?
-    ORDER BY (SELECT COUNT(*) FROM error_log e WHERE e.item_type='listening' AND e.item_id=l.id AND e.resolved_at IS NULL) DESC,
-      COALESCE(m.score,0.5) ASC, RANDOM() LIMIT 4`).all(maxLevel);
+    ORDER BY COALESCE(m.score,0.5) ASC, RANDOM() LIMIT 8`).all(maxLevel);
   const reading = db.prepare(`SELECT r.id,r.title,r.level
     FROM reading_texts r
     LEFT JOIN skill_mastery m ON m.skill_type='reading' AND m.skill_key=('reading-' || r.level)
     WHERE r.level <= ?
-    ORDER BY (SELECT COUNT(*) FROM error_log e WHERE e.item_type='reading' AND e.item_id=r.id AND e.resolved_at IS NULL) DESC,
-      COALESCE(m.score,0.5) ASC, RANDOM() LIMIT 2`).all(maxLevel);
-  return selectInterleavedSession({dueVocabulary,learning,grammar,listening,reading,limit});
+    ORDER BY COALESCE(m.score,0.5) ASC, RANDOM() LIMIT 6`).all(maxLevel);
+
+  const vocabRanked=dueVocabulary.length&&Number(dueVocabulary[0].reps||0)>0?dueVocabulary:rankByReadiness(db,'vocabulary',dueVocabulary);
+  const learningRanked=[...learning].sort((a,b)=>prerequisiteReadiness(db,b.kind,b.id)-prerequisiteReadiness(db,a.kind,a.id));
+  const grammarRanked=rankByReadiness(db,'grammar',grammar);
+  const listeningRanked=rankByReadiness(db,'listening',listening);
+  const readingRanked=rankByReadiness(db,'reading',reading);
+  return selectInterleavedSession({dueVocabulary:vocabRanked,learning:learningRanked,grammar:grammarRanked,listening:listeningRanked,reading:readingRanked,limit});
 }
 
 export function completeSpeaking(db, payload, now = new Date()) {
@@ -374,8 +417,8 @@ export function completeSpeaking(db, payload, now = new Date()) {
 }
 
 export function exportData(db) {
-  const tables = ['meta','vocabulary','srs','reviews','activity','skill_mastery','skill_events','error_log'];
-  const out = { schemaVersion:'SIDES-EXPORT-V2', exportedAt:new Date().toISOString(), tables:{} };
+  const tables = ['meta','vocabulary','srs','reviews','activity','skill_mastery','skill_events','error_log','curriculum_meta'];
+  const out = { schemaVersion:'SIDES-EXPORT-V3', exportedAt:new Date().toISOString(), tables:{} };
   for (const table of tables) out.tables[table] = db.prepare(`SELECT * FROM ${table}`).all();
   return out;
 }
