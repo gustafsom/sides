@@ -103,30 +103,37 @@ Os blocos têm entrega funcional independente. A linha de chegada definida é o 
 ## Bloco 10 — Planejador diário e gamificação madura ✅
 
 - área **Planejador diário** em `/planner.html`;
-- metas configuráveis de minutos por dia, minutos por semana, dias ativos e duração preferida da sessão;
-- padrão 20 min/dia, 120 min/semana, 5 dias/semana e sessão de 20 min;
+- metas configuráveis de minutos/dia, minutos/semana, dias ativos e duração da sessão;
 - **Seu treino de hoje** calculado dinamicamente;
-- prioridade combinada por dívida FSRS, designações próximas, índice de atenção e competências ausentes na semana;
-- dívida de revisão >7 dias e designação para o dia seguinte podem atingir prioridade máxima;
-- estimativa de tempo usando os registros próprios de core, escrita, fala, designações e imersão;
-- resumo do plano no dashboard principal;
-- acesso direto do item recomendado ao módulo correspondente;
-- `SIDES-XP-V2`: XP bruto preservado e XP efetivo calculado para gamificação madura;
-- retorno decrescente ao repetir o mesmo item em ≤1 h / ≤6 h / ≤24 h / ≤72 h;
+- prioridade por dívida FSRS, designações, índice de atenção e competências ausentes na semana;
+- estimativa de tempo usando core, escrita, fala, designações e imersão;
+- `SIDES-XP-V2` com XP efetivo e retorno decrescente por repetição;
 - teto de 500 XP efetivos/dia sem bloquear estudo ou domínio;
-- conquistas por meta diária, tempo semanal, dias ativos, equilíbrio de competências e revisões sob controle;
-- planos diários não são persistidos: são derivados do estado atual;
-- nova tabela `study_goals` e `plannerSchemaVersion=SIDES-PLANNER-V1`;
+- planos diários derivados, não persistidos;
+- `study_goals` e `SIDES-PLANNER-V1`;
 - migração aditiva para `SIDES-DB-V9`;
 - API `SIDES-API-V8` e export `SIDES-EXPORT-V8`.
 
-## Bloco 11 — Integridade, backup e recuperação
+## Bloco 11 — Integridade, backup e recuperação ✅
 
-- backup automático rotativo;
-- restauração validada;
-- migrações e recuperação de banco;
-- exportação/importação completa;
-- logs locais com retenção controlada.
+- área **Integridade e backup** em `/integrity.html`;
+- `PRAGMA quick_check` e `PRAGMA foreign_key_check`;
+- `maintenance_state` e `SIDES-INTEGRITY-V1`;
+- backup SQLite nativo com arquivo temporário, validação e SHA-256 antes da aceitação;
+- backup automático ao iniciar quando necessário e verificação a cada 6 horas;
+- novo automático somente quando o anterior tem 24 horas ou mais;
+- rotação padrão: 14 automáticos, 10 manuais, 5 pré-importação e 5 pré-restauração;
+- download de backups locais pela interface;
+- exportação JSON completa `SIDES-EXPORT-V9` com manifesto por tabela;
+- importação de backup JSON com validação prévia, backup `preimport`, transação única e rollback em falha de integridade;
+- tabelas desconhecidas rejeitadas antes de modificar o banco;
+- restauração SQLite validada e preparada durante a sessão;
+- restauração aplicada apenas no próximo início, antes de abrir SQLite;
+- banco anterior/WAL/SHM preservados em `data/recovery/` durante a troca;
+- banco restaurado percorre novamente as migrações do SIDES;
+- logs técnicos JSONL locais, sem conteúdo livre do usuário, com retenção padrão de 30 dias;
+- migração aditiva para `SIDES-DB-V10`;
+- API local `SIDES-API-V9`.
 
 ## Bloco 12 — Produto Windows instalável
 
