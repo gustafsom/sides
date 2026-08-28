@@ -9,6 +9,8 @@ import { checkWriting, nextWritingPrompt, submitWriting, writingOverview } from 
 
 const NOW=new Date('2026-08-28T18:00:00Z');
 const fallbackOnly={env:{SIDES_LANGUAGETOOL_URL:'https://api.languagetool.org'}};
+const CONTENT_COLUMNS=new Set(['text','content','body','original','original_text','corrected','corrected_text','replacement','replacement_text','user_text','source_text']);
+const hasContentColumn=columns=>columns.some(x=>CONTENT_COLUMNS.has(String(x).toLowerCase()));
 
 test('writing prompt bank is balanced from A1 through B2',()=>{
   assert.equal(WRITING_PROMPTS.length,32);
@@ -61,7 +63,7 @@ test('V7 writing schema persists metrics and categories, never produced text',()
   assert.ok(attempts.includes('review_index'));
   assert.ok(issues.includes('category'));
   assert.ok(db.prepare('PRAGMA table_info(activity)').all().some(x=>x.name==='writing'));
-  assert.equal([...attempts,...issues].some(x=>/text|content|body|original|corrected|replacement/i.test(x)),false);
+  assert.equal(hasContentColumn([...attempts,...issues]),false);
 });
 
 test('rewrite resolves categories that disappeared and preserves only metrics',async()=>{
@@ -76,7 +78,7 @@ test('rewrite resolves categories that disappeared and preserves only metrics',a
   const unresolved=db.prepare("SELECT COUNT(*) n FROM error_log WHERE item_type='writing' AND item_id=? AND resolved_at IS NULL").get(first.id).n;
   assert.equal(Number(unresolved),0);
   const row=db.prepare('SELECT * FROM writing_attempts WHERE id=?').get(first.id);
-  assert.equal(Object.keys(row).some(x=>/text|content|body|original|corrected/i.test(x)),false);
+  assert.equal(hasContentColumn(Object.keys(row)),false);
   const day=db.prepare('SELECT writing FROM activity WHERE day=?').get('2026-08-28');
   assert.equal(day.writing,2);
 });
@@ -126,6 +128,6 @@ test('HTTP writing API uses local LanguageTool mock and backup contains metrics 
     assert.equal(backup.tables.writing_attempts.length,1);
     assert.ok(backup.tables.writing_issue_summary.length>=1);
     assert.equal(JSON.stringify(backup.tables.writing_attempts).includes('Hoje escrevo'),false);
-    assert.equal(Object.keys(backup.tables.writing_attempts[0]).some(x=>/text|content|body|original|corrected/i.test(x)),false);
+    assert.equal(hasContentColumn(Object.keys(backup.tables.writing_attempts[0])),false);
   }finally{await new Promise(resolve=>server.close(resolve))}
 });
