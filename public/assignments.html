@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>SIDES · Minhas designações</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/assignments.css">
+</head>
+<body>
+<header class="topbar">
+  <div><strong>SIDES</strong><span>Minhas designações · preparação em espanhol</span></div>
+  <div class="topLinks"><a class="headerLink" href="/jw.html">Trilha JW</a><a class="headerLink" href="/">Painel principal</a></div>
+</header>
+<main>
+  <section class="hero assignmentHero">
+    <div><span class="eyebrow">Bloco 6</span><h1>Prepare cada designação com antecedência.</h1>
+      <p>Cadastre somente a referência e suas próprias notas. O SIDES distribui os ensaios até a data, acompanha tempo, confiança e rubricas, sem copiar conteúdo oficial.</p>
+    </div>
+    <button id="newBtn">Nova designação</button>
+  </section>
+
+  <section id="assignmentStats" class="stats"></section>
+
+  <section id="formCard" class="card hidden">
+    <div class="sectionTitle"><div><span class="eyebrow">Planejamento</span><h2 id="formTitle">Nova designação</h2></div><button id="cancelForm" class="ghost">Fechar</button></div>
+    <form id="assignmentForm" class="assignmentForm">
+      <label>Tipo<select id="type" required>
+        <option value="reading">Leitura da Bíblia</option>
+        <option value="comment">Comentário de reunião</option>
+        <option value="student">Designação de estudante</option>
+        <option value="talk">Discurso</option>
+        <option value="ministry">Apresentação de ministério</option>
+        <option value="other">Outra designação</option>
+      </select></label>
+      <label>Título<input id="title" maxlength="160" required placeholder="Ex.: Leitura da Bíblia"></label>
+      <label>Referência curta<input id="reference" maxlength="180" placeholder="Ex.: Jeremías 30:18-24"></label>
+      <label>Data<input id="dueDate" type="date" required></label>
+      <label>Horário<input id="dueTime" type="time"></label>
+      <label>Tempo-alvo (segundos)<input id="targetSeconds" type="number" min="15" max="7200" value="240"></label>
+      <label class="wide">Suas notas<textarea id="notes" maxlength="2000" placeholder="Somente suas próprias notas/esboço. Não é necessário colar o texto da publicação."></textarea></label>
+      <div class="wide formActions"><button type="submit" id="saveBtn">Salvar designação</button></div>
+    </form>
+  </section>
+
+  <section class="card">
+    <div class="sectionTitle"><div><span class="eyebrow">Agenda</span><h2>Próximas designações</h2></div></div>
+    <div id="assignmentList" class="assignmentList"></div>
+  </section>
+
+  <section id="detailCard" class="card hidden"></section>
+
+  <section class="card legalNote"><h2>Limite de conteúdo</h2>
+    <p>O SIDES não importa nem armazena automaticamente texto de publicações ou da Bíblia. A referência, o título e as notas desta área são inseridos por você. Áudio de ensaio permanece somente na memória da aba e não é salvo.</p>
+  </section>
+</main>
+<script type="module" src="/assignments.js"></script>
+</body>
+</html>
