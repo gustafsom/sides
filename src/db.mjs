@@ -206,7 +206,7 @@ function seed(db) {
   }
 
   if (db.prepare('SELECT COUNT(*) AS n FROM placement_items').get().n === 0) {
-    const insert = db.prepare('INSERT INTO placement_items(level,prompt,answers_json,options_json) VALUES (?,?,?,?,?)');
+    const insert = db.prepare('INSERT INTO placement_items(level,prompt,answers_json,options_json) VALUES (?,?,?,?)');
     for (const x of placementSeed) insert.run(x.level, x.prompt, JSON.stringify(x.answers), JSON.stringify(x.options));
   }
 
