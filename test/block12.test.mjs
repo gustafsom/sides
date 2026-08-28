@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
-import { openDatabase } from '../src/db.mjs';
+import { dirname, join, resolve } from 'node:path';
+import { defaultDatabasePath, openDatabase } from '../src/db.mjs';
 import { createSidesServer } from '../src/server.mjs';
 import {
   WINDOWS_INSTALL_SCHEMA, WINDOWS_PACKAGE_SCHEMA, buildWindowsManifest, safePackagePath,
@@ -55,6 +55,13 @@ test('manifest rejects traversal, duplicate paths and missing portable layout',(
     file(dir,'payload/package.json','{}');
     const m=buildWindowsManifest(dir,{version:'0.12.0'});
     assert.equal(validateWindowsManifest(m).error,'PACKAGE_LAYOUT_INVALID');
+  }finally{rmSync(dir,{recursive:true,force:true});}
+});
+
+test('database path uses installed persistent directory only when SIDES_DATA_DIR is provided',()=>{
+  const dir=temp();try{
+    assert.equal(defaultDatabasePath({SIDES_DATA_DIR:dir}),resolve(dir,'sides.sqlite'));
+    assert.equal(defaultDatabasePath({}),resolve('data/sides.sqlite'));
   }finally{rmSync(dir,{recursive:true,force:true});}
 });
 
