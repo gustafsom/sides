@@ -38,6 +38,7 @@ function streak(db, now = new Date()) {
   return n;
 }
 
+
 function computeAchievements({ total, currentStreak, correctRate }) {
   const defs = [
     ['primeiro-passo','Primeiro passo','Complete sua primeira atividade', total.attempts >= 1],
