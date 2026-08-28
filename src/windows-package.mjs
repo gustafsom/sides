@@ -65,8 +65,10 @@ function checkRequiredLayout(paths){
   const required=[
     'INSTALAR-SIDES.ps1','INSTALAR-SIDES.vbs',
     'launcher/SIDES.vbs','launcher/Run-SIDES.ps1','launcher/Atualizar-SIDES.vbs','launcher/Update-SIDES.ps1','launcher/Desinstalar-SIDES.ps1',
+    'launcher/Rollback-SIDES.vbs','launcher/Rollback-SIDES.ps1',
     'launcher/CONFIGURAR-VOZ-OFFLINE.ps1','launcher/CONFIGURAR-GRAMATICA-LOCAL.ps1',
-    'payload/package.json','payload/runtime/node.exe','payload/src/server.mjs','payload/public/index.html','payload/node_modules/ts-fsrs/package.json'
+    'payload/package.json','payload/THIRD_PARTY_NOTICES.md','payload/runtime/node.exe','payload/runtime/NODE-LICENSE.txt',
+    'payload/src/server.mjs','payload/public/index.html','payload/node_modules/ts-fsrs/package.json'
   ];
   const missing=required.filter(x=>!set.has(x));
   return {ok:missing.length===0,missing};

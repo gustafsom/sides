@@ -157,10 +157,21 @@ Os blocos têm entrega funcional independente. A linha de chegada definida é o 
 - funcionamento básico após instalação sem Node/npm/Git/GitHub na máquina;
 - DB/API permanecem compatíveis em `SIDES-DB-V10` / `SIDES-API-V9`.
 
-## Bloco 13 — Qualidade, segurança, SISDEV e Release 1.0
+## Bloco 13 — Qualidade, segurança, SISDEV e Release 1.0 ✅
 
-- testes E2E e de migração;
-- auditoria de segurança/licenças;
-- gate local do SISDEV e fechamento do registro no Control Plane;
-- release, changelog, tags e rollback;
-- roteiro completo de aceitação.
+- versão promovida para **SIDES 1.0.0**;
+- testes E2E HTTP de aceitação com headers defensivos e caminhos fail-closed;
+- migração legada V2 → V10 mantida no gate integral;
+- `scripts/security-audit.mjs` com allowlist de dependências, busca de secrets e invariantes local-first;
+- `npm audit --omit=dev --audit-level=high` no CI de release;
+- auditoria técnica de licenças e `THIRD_PARTY_NOTICES.md`;
+- build Windows falha se não puder incluir a licença integral da distribuição Node;
+- rollback operacional de aplicação usando `current`/`previous` sem alterar `dataDir`;
+- CI Windows instala o pacote real em diretório temporário e executa o runtime instalado;
+- `SISDEV-GATE.ps1` fail-closed, preso a SHA exato, working tree limpa e modo `READ_ONLY`;
+- resultado SISDEV sanitizado em `%USERPROFILE%\Downloads\SISDEV\RESULTADOS\sides`;
+- changelog, roteiro de aceitação e documentação de release/rollback;
+- constatação registrada de que `main` está sem branch protection/ruleset em 2026-08-28;
+- processo de release exige PR, CI verde e `expected_head_sha` enquanto essa governança não for habilitada;
+- tag final `v1.0.0` reservada ao SHA que também passar o gate SISDEV local;
+- backlog pós-1.0 separado do escopo dos 13 blocos.
