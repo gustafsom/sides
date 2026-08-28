@@ -1,14 +1,14 @@
-// Bloco 5 — currículo original A1–B2 do SIDES.
+// Bloco 5 + expansão 5.1 — currículo original A1–B2 do SIDES.
 // Conteúdo próprio, sem cópia de cursos/publicações externas.
 
-export const CURRICULUM_PACK = 'SIDES-CURRICULUM-B5-V1';
+export const CURRICULUM_PACK = 'SIDES-CURRICULUM-B5-V2';
 
 export const curriculumTargets = {
-  vocabulary: 600,
-  learning: 300,
-  grammar: 150,
-  listening: 100,
-  reading: 50
+  vocabulary: 1200,
+  learning: 600,
+  grammar: 300,
+  listening: 200,
+  reading: 100
 };
 
 export const curriculumFramework = {
