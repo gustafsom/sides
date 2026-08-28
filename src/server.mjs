@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { openDatabase } from './db.mjs';
 import { checkVocabulary, completeSpeaking, curriculumStatus, dashboard, dailySession, errorNotebook, exportData, getVocabularyCard, nextLearningItem, placementItems, progressDashboard, randomGrammar, randomListening, randomReading, submitGrammar, submitLearningItem, submitListening, submitPlacement, submitReading, submitVocabulary, updatePreferences } from './service.mjs';
 import { completeJwSpeaking, jwOverview, jwSessionPlan, nextBibleBook, nextJwVocabulary, submitBibleBook, submitJwVocabulary } from './jw-service.mjs';
+import { assignmentOverview, createAssignment, getAssignment, listAssignments, recordAssignmentPractice, updateAssignment } from './assignments.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('../', import.meta.url)));
 const PUBLIC = join(ROOT,'public');
@@ -47,11 +48,21 @@ async function staticFile(req,res) {
   } catch { return false; }
 }
 
+function extendedExport(db) {
+  const data=exportData(db);
+  data.schemaVersion='SIDES-EXPORT-V4';
+  for(const table of ['jw_assignments','jw_assignment_practices']){
+    const exists=db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(table);
+    if(exists)data.tables[table]=db.prepare(`SELECT * FROM ${table}`).all();
+  }
+  return data;
+}
+
 export function createSidesServer({db=openDatabase(), now=()=>new Date()}={}) {
   return createServer(async (req,res)=>{
     try {
       const url = new URL(req.url,'http://localhost');
-      if (url.pathname === '/api/health' && req.method==='GET') return json(res,200,{ok:true,app:'SIDES',schema:'SIDES-API-V3',time:now().toISOString()});
+      if (url.pathname === '/api/health' && req.method==='GET') return json(res,200,{ok:true,app:'SIDES',schema:'SIDES-API-V4',time:now().toISOString()});
       if (url.pathname === '/api/dashboard' && req.method==='GET') return json(res,200,dashboard(db,now()));
       if (url.pathname === '/api/progress' && req.method==='GET') return json(res,200,progressDashboard(db,now(),Number(url.searchParams.get('days')||30)));
       if (url.pathname === '/api/curriculum' && req.method==='GET') return json(res,200,curriculumStatus(db));
@@ -81,8 +92,17 @@ export function createSidesServer({db=openDatabase(), now=()=>new Date()}={}) {
       if (url.pathname === '/api/jw/speaking/complete' && req.method==='POST') return json(res,200,completeJwSpeaking(db,await body(req),now()));
       if (url.pathname === '/api/jw/session' && req.method==='GET') return json(res,200,{items:jwSessionPlan()});
 
+      if (url.pathname === '/api/jw/assignments/overview' && req.method==='GET') return json(res,200,assignmentOverview(db,now()));
+      if (url.pathname === '/api/jw/assignments' && req.method==='GET') return json(res,200,{items:listAssignments(db,now())});
+      if (url.pathname === '/api/jw/assignments' && req.method==='POST') return json(res,201,createAssignment(db,await body(req),now()));
+      const practiceMatch=url.pathname.match(/^\/api\/jw\/assignments\/(\d+)\/practice$/);
+      if (practiceMatch && req.method==='POST') return json(res,201,recordAssignmentPractice(db,Number(practiceMatch[1]),await body(req),now()));
+      const assignmentMatch=url.pathname.match(/^\/api\/jw\/assignments\/(\d+)$/);
+      if (assignmentMatch && req.method==='GET') return json(res,200,getAssignment(db,Number(assignmentMatch[1]),now()));
+      if (assignmentMatch && (req.method==='PATCH'||req.method==='PUT')) return json(res,200,updateAssignment(db,Number(assignmentMatch[1]),await body(req),now()));
+
       if (url.pathname === '/api/export' && req.method==='GET') {
-        const data=exportData(db);
+        const data=extendedExport(db);
         res.writeHead(200,{...securityHeaders,'Content-Type':'application/json; charset=utf-8','Content-Disposition':`attachment; filename="SIDES-backup-${new Date().toISOString().slice(0,10)}.json"`});
         return res.end(JSON.stringify(data,null,2));
       }
