@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { lstatSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { lstatSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 
 export const WINDOWS_PACKAGE_SCHEMA='SIDES-WINDOWS-PACKAGE-V1';
@@ -65,6 +65,7 @@ function checkRequiredLayout(paths){
   const required=[
     'INSTALAR-SIDES.ps1','INSTALAR-SIDES.vbs',
     'launcher/SIDES.vbs','launcher/Run-SIDES.ps1','launcher/Atualizar-SIDES.vbs','launcher/Update-SIDES.ps1','launcher/Desinstalar-SIDES.ps1',
+    'launcher/CONFIGURAR-VOZ-OFFLINE.ps1','launcher/CONFIGURAR-GRAMATICA-LOCAL.ps1',
     'payload/package.json','payload/runtime/node.exe','payload/src/server.mjs','payload/public/index.html','payload/node_modules/ts-fsrs/package.json'
   ];
   const missing=required.filter(x=>!set.has(x));
@@ -106,9 +107,8 @@ export function verifyWindowsPackage(root,manifestInput=null){
     if(wanted.size!==file.size)return {ok:false,error:'PACKAGE_SIZE_MISMATCH',path:file.path};
     if(wanted.sha256!==file.sha256)return {ok:false,error:'PACKAGE_CHECKSUM_MISMATCH',path:file.path};
   }
-  const shaPath=join(dir,MANIFEST_SHA_FILE);
   try{
-    const declared=readFileSync(shaPath,'utf8').trim().split(/\s+/)[0].toLowerCase();
+    const declared=readFileSync(join(dir,MANIFEST_SHA_FILE),'utf8').trim().split(/\s+/)[0].toLowerCase();
     if(!/^[a-f0-9]{64}$/.test(declared)||declared!==sha256File(join(dir,MANIFEST_FILE)))return {ok:false,error:'PACKAGE_MANIFEST_CHECKSUM_MISMATCH'};
   }catch{return {ok:false,error:'PACKAGE_MANIFEST_CHECKSUM_MISSING'};}
   return {ok:true,version:manifest.appVersion,files:actual.length,manifestSha256:sha256File(join(dir,MANIFEST_FILE))};
