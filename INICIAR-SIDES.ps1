@@ -30,6 +30,43 @@ if (-not (Test-Path (Join-Path $Root "node_modules\ts-fsrs\package.json"))) {
   }
 }
 
+function Test-LanguageToolLocal {
+  try {
+    $r = Invoke-WebRequest -Uri "http://127.0.0.1:8081/v2/languages" -UseBasicParsing -TimeoutSec 1
+    return ($r.StatusCode -eq 200)
+  } catch { return $false }
+}
+
+$ltInstall = Join-Path $Root "tools\languagetool"
+$ltJar = Join-Path $ltInstall "languagetool-server.jar"
+if (Test-Path $ltJar) {
+  $ltReady = Test-LanguageToolLocal
+  if (-not $ltReady) {
+    $java = Get-Command java -ErrorAction SilentlyContinue
+    if ($java) {
+      $javaText = (& java -version 2>&1 | Out-String)
+      $javaMajor = 0
+      if ($javaText -match 'version\s+"([0-9]+)') { $javaMajor = [int]$Matches[1] }
+      elseif ($javaText -match 'openjdk\s+([0-9]+)') { $javaMajor = [int]$Matches[1] }
+      if ($javaMajor -ge 17) {
+        Write-Host "Iniciando corretor gramatical local LanguageTool..." -ForegroundColor Cyan
+        $ltArgs = @('-cp','languagetool-server.jar','org.languagetool.server.HTTPServer','--port','8081','--config','server.properties')
+        Start-Process -FilePath $java.Source -ArgumentList $ltArgs -WorkingDirectory $ltInstall -WindowStyle Hidden | Out-Null
+        for ($i=0; $i -lt 15; $i++) {
+          Start-Sleep -Milliseconds 300
+          if (Test-LanguageToolLocal) { $ltReady = $true; break }
+        }
+      }
+    }
+  }
+  if ($ltReady) {
+    $env:SIDES_LANGUAGETOOL_URL = "http://127.0.0.1:8081"
+    Write-Host "LanguageTool local ativo em 127.0.0.1:8081." -ForegroundColor Green
+  } else {
+    Write-Host "LanguageTool instalado, mas indisponivel. O SIDES usara o corretor local basico." -ForegroundColor Yellow
+  }
+}
+
 $port = 4317
 $url = "http://127.0.0.1:$port"
 Write-Host "Iniciando SIDES em $url" -ForegroundColor Cyan
