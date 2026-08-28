@@ -8,21 +8,16 @@ import { openDatabase } from '../src/db.mjs';
 import { dashboard, getVocabularyCard, nextLearningItem, progressDashboard, randomGrammar, submitGrammar, submitLearningItem, submitVocabulary } from '../src/service.mjs';
 import { SCHEDULER_ID, scheduleFsrs } from '../src/fsrs-adapter.mjs';
 
-test('V7 schema keeps FSRS, adaptive history, curriculum, assignments, speech and writing',()=>{
+test('V8 schema keeps FSRS, adaptive history, curriculum, assignments, speech, writing and immersion',()=>{
   const db=openDatabase(':memory:');
-  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V7');
+  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V8');
   const columns=new Set(db.prepare('PRAGMA table_info(srs)').all().map(x=>x.name));
   for(const name of ['stability','difficulty','elapsed_days','scheduled_days','learning_steps','state']) assert.ok(columns.has(name));
-  assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='skill_events'").get());
-  assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='curriculum_meta'").get());
-  assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='jw_assignments'").get());
-  assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='jw_assignment_practices'").get());
-  assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='speech_attempts'").get());
-  assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='writing_attempts'").get());
-  assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='writing_issue_summary'").get());
+  for(const table of ['skill_events','curriculum_meta','jw_assignments','jw_assignment_practices','speech_attempts','writing_attempts','writing_issue_summary','immersion_sessions','immersion_turn_metrics'])
+    assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(table));
 });
 
-test('real V2 database migration preserves study data and legacy review state through V7',()=>{
+test('real V2 database migration preserves study data and legacy review state through V8',()=>{
   const dir=mkdtempSync(join(tmpdir(),'sides-v2-'));
   const path=join(dir,'sides.sqlite');
   try{
@@ -49,11 +44,13 @@ test('real V2 database migration preserves study data and legacy review state th
     assert.equal(state.lapses,2);
     assert.equal(state.scheduler,'SIDES-SRS-V1');
     assert.equal(db.prepare("SELECT value FROM meta WHERE key='placementLevel'").get().value,'B1');
-    assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V7');
+    assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V8');
     assert.equal(db.prepare("SELECT value FROM meta WHERE key='assignmentSchemaVersion'").get().value,'SIDES-JW-ASSIGNMENTS-V1');
     assert.equal(db.prepare("SELECT value FROM meta WHERE key='speechSchemaVersion'").get().value,'SIDES-SPEECH-V1');
     assert.equal(db.prepare("SELECT value FROM meta WHERE key='writingSchemaVersion'").get().value,'SIDES-WRITING-V1');
-    assert.ok(db.prepare('PRAGMA table_info(activity)').all().some(x=>x.name==='writing'));
+    assert.equal(db.prepare("SELECT value FROM meta WHERE key='immersionSchemaVersion'").get().value,'SIDES-IMMERSION-V1');
+    const activityCols=new Set(db.prepare('PRAGMA table_info(activity)').all().map(x=>x.name));
+    assert.ok(activityCols.has('writing'));assert.ok(activityCols.has('immersion'));
     db.close();
   } finally { rmSync(dir,{recursive:true,force:true}); }
 });
