@@ -54,9 +54,9 @@ test('local LanguageTool matches are classified and merged with SIDES rules',asy
   assert.ok(r.reviewIndex<100);
 });
 
-test('V7 writing schema persists metrics and categories, never produced text',()=>{
+test('V8 writing schema persists metrics and categories, never produced text',()=>{
   const db=openDatabase(':memory:');
-  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V7');
+  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V8');
   assert.equal(db.prepare("SELECT value FROM meta WHERE key='writingSchemaVersion'").get().value,'SIDES-WRITING-V1');
   const attempts=db.prepare('PRAGMA table_info(writing_attempts)').all().map(x=>x.name);
   const issues=db.prepare('PRAGMA table_info(writing_issue_summary)').all().map(x=>x.name);
@@ -116,7 +116,7 @@ test('HTTP writing API uses local LanguageTool mock and backup contains metrics 
   await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve)});
   try{
     const {port}=server.address(),base=`http://127.0.0.1:${port}`;
-    const health=await fetch(`${base}/api/health`).then(r=>r.json());assert.equal(health.schema,'SIDES-API-V6');
+    const health=await fetch(`${base}/api/health`).then(r=>r.json());assert.equal(health.schema,'SIDES-API-V7');
     const status=await fetch(`${base}/api/writing/status`).then(r=>r.json());assert.equal(status.languageTool.ready,true);
     const prompt=await fetch(`${base}/api/writing/prompt`).then(r=>r.json());assert.equal(prompt.item.level,'A1');
     const checked=await fetch(`${base}/api/writing/check`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:'Hoje escrevo em espanhol.'})}).then(r=>r.json());
@@ -124,7 +124,7 @@ test('HTTP writing API uses local LanguageTool mock and backup contains metrics 
     const saved=await fetch(`${base}/api/writing/submit`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:'Hoje escrevo em espanhol.',responseMs:45000})}).then(r=>r.json());
     assert.ok(saved.id>0);
     const backup=await fetch(`${base}/api/export`).then(r=>r.json());
-    assert.equal(backup.schemaVersion,'SIDES-EXPORT-V6');
+    assert.equal(backup.schemaVersion,'SIDES-EXPORT-V7');
     assert.equal(backup.tables.writing_attempts.length,1);
     assert.ok(backup.tables.writing_issue_summary.length>=1);
     assert.equal(JSON.stringify(backup.tables.writing_attempts).includes('Hoje escrevo'),false);
