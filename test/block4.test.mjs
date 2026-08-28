@@ -1,5 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 import { openDatabase } from '../src/db.mjs';
 import { dashboard, getVocabularyCard, nextLearningItem, progressDashboard, randomGrammar, submitGrammar, submitLearningItem, submitVocabulary } from '../src/service.mjs';
 import { SCHEDULER_ID, scheduleFsrs } from '../src/fsrs-adapter.mjs';
@@ -11,6 +15,41 @@ test('V3 schema adds FSRS state and adaptive event history without changing exis
   for(const name of ['stability','difficulty','elapsed_days','scheduled_days','learning_steps','state']) assert.ok(columns.has(name));
   assert.ok(db.prepare('SELECT COUNT(*) n FROM learning_items').get().n>=20);
   assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='skill_events'").get());
+});
+
+test('real V2 database migration preserves study data and legacy review state',()=>{
+  const dir=mkdtempSync(join(tmpdir(),'sides-v2-'));
+  const path=join(dir,'sides.sqlite');
+  try{
+    const old=new DatabaseSync(path);
+    old.exec(`
+      CREATE TABLE meta(key TEXT PRIMARY KEY,value TEXT NOT NULL) STRICT;
+      CREATE TABLE vocabulary(id INTEGER PRIMARY KEY,spanish TEXT NOT NULL,portuguese TEXT NOT NULL,example_es TEXT,example_pt TEXT,level TEXT NOT NULL,tags TEXT NOT NULL DEFAULT '') STRICT;
+      CREATE TABLE srs(item_type TEXT NOT NULL,item_id INTEGER NOT NULL,due_at TEXT NOT NULL,interval_days REAL NOT NULL DEFAULT 0,ease REAL NOT NULL DEFAULT 2.35,reps INTEGER NOT NULL DEFAULT 0,lapses INTEGER NOT NULL DEFAULT 0,last_review_at TEXT,scheduler TEXT NOT NULL DEFAULT 'SIDES-SRS-V1',PRIMARY KEY(item_type,item_id)) STRICT;
+    `);
+    old.prepare('INSERT INTO meta(key,value) VALUES (?,?)').run('schemaVersion','SIDES-DB-V2');
+    old.prepare('INSERT INTO meta(key,value) VALUES (?,?)').run('placementLevel','B1');
+    old.prepare('INSERT INTO vocabulary(id,spanish,portuguese,example_es,example_pt,level,tags) VALUES (?,?,?,?,?,?,?)')
+      .run(77,'prueba preservada','teste preservado','Una prueba preservada.','Um teste preservado.','B1','migracao');
+    old.prepare('INSERT INTO srs(item_type,item_id,due_at,interval_days,ease,reps,lapses,last_review_at,scheduler) VALUES (?,?,?,?,?,?,?,?,?)')
+      .run('vocabulary',77,'2026-09-05T12:00:00.000Z',12.5,2.48,9,2,'2026-08-24T12:00:00.000Z','SIDES-SRS-V1');
+    old.close();
+
+    const db=openDatabase(path);
+    const vocab=db.prepare('SELECT * FROM vocabulary WHERE id=77').get();
+    const state=db.prepare("SELECT * FROM srs WHERE item_type='vocabulary' AND item_id=77").get();
+    assert.equal(vocab.spanish,'prueba preservada');
+    assert.equal(state.interval_days,12.5);
+    assert.equal(state.reps,9);
+    assert.equal(state.lapses,2);
+    assert.equal(state.scheduler,'SIDES-SRS-V1');
+    assert.equal(db.prepare("SELECT value FROM meta WHERE key='placementLevel'").get().value,'B1');
+    assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V3');
+    const columns=new Set(db.prepare('PRAGMA table_info(srs)').all().map(x=>x.name));
+    assert.ok(columns.has('stability'));
+    assert.ok(columns.has('difficulty'));
+    db.close();
+  } finally { rmSync(dir,{recursive:true,force:true}); }
 });
 
 test('FSRS 5.4.1 becomes the scheduler while accepting legacy V1 card state',()=>{
