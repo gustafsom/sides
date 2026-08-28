@@ -12,7 +12,7 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 7
+    timeout-minutes: 8
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -25,9 +25,28 @@ jobs:
       - name: Check and test
         run: npm run check
 
+  security-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Node 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Install pinned dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Security invariants
+        run: npm run security:check
+      - name: Dependency audit high or critical
+        run: npm audit --omit=dev --audit-level=high
+      - name: Release static gate
+        run: npm run release:gate
+
   windows-package:
     runs-on: windows-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -42,9 +61,11 @@ jobs:
         run: |
           $files = @(
             '.\BUILD-WINDOWS-PACKAGE.ps1',
+            '.\SISDEV-GATE.ps1',
             '.\windows\INSTALAR-SIDES.ps1',
             '.\windows\launcher\Run-SIDES.ps1',
             '.\windows\launcher\Update-SIDES.ps1',
+            '.\windows\launcher\Rollback-SIDES.ps1',
             '.\windows\launcher\Desinstalar-SIDES.ps1'
           )
           foreach ($file in $files) {
@@ -55,7 +76,7 @@ jobs:
       - name: Build verified Windows package
         shell: powershell
         run: .\BUILD-WINDOWS-PACKAGE.ps1 -OutputDir dist
-      - name: Portable runtime smoke test
+      - name: Installed package smoke test
         shell: powershell
         run: |
           $zip = Get-ChildItem .\dist\SIDES-*-windows-x64.zip | Select-Object -First 1
@@ -64,24 +85,35 @@ jobs:
           $declared = ((Get-Content $shaFile -Raw).Trim() -split '\s+')[0].ToLowerInvariant()
           $actual = (Get-FileHash $zip.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($declared -ne $actual) { throw 'PACKAGE_ZIP_CHECKSUM_MISMATCH' }
-          $extract = Join-Path $env:RUNNER_TEMP 'sides-package-smoke'
-          Remove-Item $extract -Recurse -Force -ErrorAction SilentlyContinue
+
+          $extract = Join-Path $env:RUNNER_TEMP 'sides-release-package'
+          $install = Join-Path $env:RUNNER_TEMP 'sides-release-install'
+          $data = Join-Path $env:RUNNER_TEMP 'sides-release-data'
+          Remove-Item $extract,$install,$data -Recurse -Force -ErrorAction SilentlyContinue
           Expand-Archive -LiteralPath $zip.FullName -DestinationPath $extract -Force
           node .\scripts\verify-windows-package.mjs $extract | Out-Null
+
+          & (Join-Path $extract 'INSTALAR-SIDES.ps1') -InstallRoot $install -DataDir $data -NoLaunch -NoShortcuts -Silent
+          if ($LASTEXITCODE -ne 0) { throw 'WINDOWS_INSTALL_SMOKE_FAILED' }
+          $state = Get-Content (Join-Path $install 'install-state.json') -Raw | ConvertFrom-Json
+          if ($state.schema -ne 'SIDES-INSTALL-V1' -or $state.version -ne '1.0.0') { throw 'WINDOWS_INSTALL_STATE_INVALID' }
+          if ([IO.Path]::GetFullPath([string]$state.dataDir) -ne [IO.Path]::GetFullPath($data)) { throw 'WINDOWS_DATA_DIR_CHANGED' }
+          $current = Join-Path $install ([string]$state.current)
+          if (-not (Test-Path (Join-Path $current 'runtime\NODE-LICENSE.txt'))) { throw 'NODE_LICENSE_NOT_INSTALLED' }
+
           $env:SIDES_PORT = '4321'
-          $env:SIDES_DATA_DIR = Join-Path $env:RUNNER_TEMP 'sides-package-data'
-          Remove-Item $env:SIDES_DATA_DIR -Recurse -Force -ErrorAction SilentlyContinue
-          $node = Join-Path $extract 'payload\runtime\node.exe'
-          $server = Join-Path $extract 'payload\src\server.mjs'
-          $process = Start-Process -FilePath $node -ArgumentList ('"'+$server+'"') -WorkingDirectory $extract -WindowStyle Hidden -PassThru
+          $env:SIDES_DATA_DIR = $data
+          $node = Join-Path $current 'runtime\node.exe'
+          $server = Join-Path $current 'src\server.mjs'
+          $process = Start-Process -FilePath $node -ArgumentList ('"'+$server+'"') -WorkingDirectory $install -WindowStyle Hidden -PassThru
           try {
             $health = $null
             for ($i=0; $i -lt 40; $i++) {
               Start-Sleep -Milliseconds 250
               try { $health = Invoke-RestMethod -Uri 'http://127.0.0.1:4321/api/health' -TimeoutSec 1; break } catch {}
             }
-            if (-not $health -or $health.app -ne 'SIDES' -or $health.schema -ne 'SIDES-API-V9') { throw 'PORTABLE_RUNTIME_HEALTH_FAILED' }
-            if (-not (Test-Path (Join-Path $env:SIDES_DATA_DIR 'sides.sqlite'))) { throw 'PORTABLE_DATA_DIR_NOT_USED' }
+            if (-not $health -or $health.app -ne 'SIDES' -or $health.schema -ne 'SIDES-API-V9') { throw 'INSTALLED_RUNTIME_HEALTH_FAILED' }
+            if (-not (Test-Path (Join-Path $data 'sides.sqlite'))) { throw 'INSTALLED_DATA_DIR_NOT_USED' }
           } finally {
             if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
           }
@@ -93,4 +125,4 @@ jobs:
           path: |
             dist/SIDES-*-windows-x64.zip
             dist/SIDES-*-windows-x64.zip.sha256
-          retention-days: 14
+          retention-days: 30
