@@ -5,6 +5,7 @@ import { vocabularySeed, grammarSeed, listeningSeed, readingSeed, placementSeed 
 import { learningItemSeed } from './block4-content.mjs';
 import { ensureCurriculum } from './curriculum.mjs';
 import { ensureAssignmentsSchema } from './assignments.mjs';
+import { ensureSpeechSchema } from './speech-service.mjs';
 
 export function openDatabase(path = resolve('data/sides.sqlite')) {
   mkdirSync(dirname(path), { recursive: true });
@@ -14,7 +15,8 @@ export function openDatabase(path = resolve('data/sides.sqlite')) {
   seed(db);
   ensureCurriculum(db);
   ensureAssignmentsSchema(db);
-  setMeta(db,'schemaVersion','SIDES-DB-V5');
+  ensureSpeechSchema(db);
+  setMeta(db,'schemaVersion','SIDES-DB-V6');
   return db;
 }
 
@@ -208,7 +210,7 @@ function seed(db) {
   for (const row of db.prepare('SELECT id,kind FROM learning_items').all()) ensureSrs.run(row.kind,row.id,epoch);
 
   const defaults = {
-    schemaVersion: 'SIDES-DB-V5',
+    schemaVersion: 'SIDES-DB-V6',
     placementLevel: 'UNASSESSED',
     placementCompleted: 'false',
     spanishVariant: 'es',
