@@ -4,6 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { vocabularySeed, grammarSeed, listeningSeed, readingSeed, placementSeed } from './content.mjs';
 import { learningItemSeed } from './block4-content.mjs';
 import { ensureCurriculum } from './curriculum.mjs';
+import { ensureAssignmentsSchema } from './assignments.mjs';
 
 export function openDatabase(path = resolve('data/sides.sqlite')) {
   mkdirSync(dirname(path), { recursive: true });
@@ -12,6 +13,8 @@ export function openDatabase(path = resolve('data/sides.sqlite')) {
   migrate(db);
   seed(db);
   ensureCurriculum(db);
+  ensureAssignmentsSchema(db);
+  setMeta(db,'schemaVersion','SIDES-DB-V5');
   return db;
 }
 
@@ -205,7 +208,7 @@ function seed(db) {
   for (const row of db.prepare('SELECT id,kind FROM learning_items').all()) ensureSrs.run(row.kind,row.id,epoch);
 
   const defaults = {
-    schemaVersion: 'SIDES-DB-V4',
+    schemaVersion: 'SIDES-DB-V5',
     placementLevel: 'UNASSESSED',
     placementCompleted: 'false',
     spanishVariant: 'es',
@@ -213,7 +216,6 @@ function seed(db) {
   };
   const meta = db.prepare('INSERT OR IGNORE INTO meta(key,value) VALUES (?,?)');
   for (const [k,v] of Object.entries(defaults)) meta.run(k,v);
-  db.prepare('INSERT INTO meta(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('schemaVersion','SIDES-DB-V4');
 }
 
 export function getMeta(db, key, fallback = null) {
