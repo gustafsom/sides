@@ -6,6 +6,9 @@ import { openDatabase } from './db.mjs';
 import { checkVocabulary, completeSpeaking, curriculumStatus, dashboard, dailySession, errorNotebook, exportData, getVocabularyCard, nextLearningItem, placementItems, progressDashboard, randomGrammar, randomListening, randomReading, submitGrammar, submitLearningItem, submitListening, submitPlacement, submitReading, submitVocabulary, updatePreferences } from './service.mjs';
 import { completeJwSpeaking, jwOverview, jwSessionPlan, nextBibleBook, nextJwVocabulary, submitBibleBook, submitJwVocabulary } from './jw-service.mjs';
 import { assignmentOverview, createAssignment, getAssignment, listAssignments, recordAssignmentPractice, updateAssignment } from './assignments.mjs';
+import { analyzeSpeech, nextSpeechTarget, speechOverview } from './speech-service.mjs';
+import { speechRuntimeStatus, transcribeWhisper } from './speech-runtime.mjs';
+import { piperStatus, synthesizePiper } from './tts-runtime.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('../', import.meta.url)));
 const PUBLIC = join(ROOT,'public');
@@ -23,16 +26,17 @@ function json(res,status,data) {
   res.writeHead(status,{...securityHeaders,'Content-Type':'application/json; charset=utf-8'});
   res.end(JSON.stringify(data));
 }
+function binary(res,status,data,type='application/octet-stream'){
+  res.writeHead(status,{...securityHeaders,'Content-Type':type,'Content-Length':data.length});res.end(data);
+}
 
-async function body(req,max=1_000_000) {
+async function rawBody(req,max=1_000_000) {
   let size=0; const chunks=[];
-  for await (const chunk of req) {
-    size += chunk.length;
-    if (size > max) throw new Error('PAYLOAD_TOO_LARGE');
-    chunks.push(chunk);
-  }
-  if (!chunks.length) return {};
-  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  for await (const chunk of req) {size+=chunk.length;if(size>max)throw new Error('PAYLOAD_TOO_LARGE');chunks.push(chunk)}
+  return Buffer.concat(chunks);
+}
+async function body(req,max=1_000_000) {
+  const raw=await rawBody(req,max);if(!raw.length)return {};return JSON.parse(raw.toString('utf8'));
 }
 
 async function staticFile(req,res) {
@@ -50,8 +54,8 @@ async function staticFile(req,res) {
 
 function extendedExport(db) {
   const data=exportData(db);
-  data.schemaVersion='SIDES-EXPORT-V4';
-  for(const table of ['jw_assignments','jw_assignment_practices']){
+  data.schemaVersion='SIDES-EXPORT-V5';
+  for(const table of ['jw_assignments','jw_assignment_practices','speech_attempts']){
     const exists=db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(table);
     if(exists)data.tables[table]=db.prepare(`SELECT * FROM ${table}`).all();
   }
@@ -62,7 +66,7 @@ export function createSidesServer({db=openDatabase(), now=()=>new Date()}={}) {
   return createServer(async (req,res)=>{
     try {
       const url = new URL(req.url,'http://localhost');
-      if (url.pathname === '/api/health' && req.method==='GET') return json(res,200,{ok:true,app:'SIDES',schema:'SIDES-API-V4',time:now().toISOString()});
+      if (url.pathname === '/api/health' && req.method==='GET') return json(res,200,{ok:true,app:'SIDES',schema:'SIDES-API-V5',time:now().toISOString()});
       if (url.pathname === '/api/dashboard' && req.method==='GET') return json(res,200,dashboard(db,now()));
       if (url.pathname === '/api/progress' && req.method==='GET') return json(res,200,progressDashboard(db,now(),Number(url.searchParams.get('days')||30)));
       if (url.pathname === '/api/curriculum' && req.method==='GET') return json(res,200,curriculumStatus(db));
@@ -101,6 +105,16 @@ export function createSidesServer({db=openDatabase(), now=()=>new Date()}={}) {
       if (assignmentMatch && req.method==='GET') return json(res,200,getAssignment(db,Number(assignmentMatch[1]),now()));
       if (assignmentMatch && (req.method==='PATCH'||req.method==='PUT')) return json(res,200,updateAssignment(db,Number(assignmentMatch[1]),await body(req),now()));
 
+      if (url.pathname === '/api/speech/status' && req.method==='GET') return json(res,200,{whisper:speechRuntimeStatus(),piper:piperStatus()});
+      if (url.pathname === '/api/speech/overview' && req.method==='GET') return json(res,200,speechOverview(db,Number(url.searchParams.get('days')||30),now()));
+      if (url.pathname === '/api/speech/target' && req.method==='GET') return json(res,200,{item:nextSpeechTarget(db,url.searchParams.get('kind')||'shadowing')});
+      if (url.pathname === '/api/speech/transcribe' && req.method==='POST') {
+        if(!String(req.headers['content-type']||'').toLowerCase().startsWith('audio/wav'))throw new Error('WAV_CONTENT_TYPE_REQUIRED');
+        return json(res,200,await transcribeWhisper(await rawBody(req,12_000_000)));
+      }
+      if (url.pathname === '/api/speech/analyze' && req.method==='POST') return json(res,200,analyzeSpeech(db,await body(req),now()));
+      if (url.pathname === '/api/speech/tts' && req.method==='POST') return binary(res,200,await synthesizePiper((await body(req)).text), 'audio/wav');
+
       if (url.pathname === '/api/export' && req.method==='GET') {
         const data=extendedExport(db);
         res.writeHead(200,{...securityHeaders,'Content-Type':'application/json; charset=utf-8','Content-Disposition':`attachment; filename="SIDES-backup-${new Date().toISOString().slice(0,10)}.json"`});
@@ -111,7 +125,7 @@ export function createSidesServer({db=openDatabase(), now=()=>new Date()}={}) {
       json(res,404,{error:'NOT_FOUND'});
     } catch (error) {
       const message = error?.message || 'INTERNAL_ERROR';
-      const status = message === 'PAYLOAD_TOO_LARGE' ? 413 : message.includes('NOT_FOUND') ? 404 : message instanceof SyntaxError ? 400 : 400;
+      const status = message === 'PAYLOAD_TOO_LARGE'||message==='WAV_TOO_LARGE' ? 413 : message.includes('NOT_FOUND') ? 404 : message==='WHISPER_BUSY' ? 409 : message.includes('NOT_CONFIGURED') ? 503 : 400;
       json(res,status,{error:message});
     }
   });
