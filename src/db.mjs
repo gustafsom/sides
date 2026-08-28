@@ -98,6 +98,28 @@ function migrate(db) {
       speaking INTEGER NOT NULL DEFAULT 0,
       minutes INTEGER NOT NULL DEFAULT 0
     ) STRICT;
+
+    CREATE TABLE IF NOT EXISTS skill_mastery (
+      skill_type TEXT NOT NULL,
+      skill_key TEXT NOT NULL,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      correct INTEGER NOT NULL DEFAULT 0,
+      score REAL NOT NULL DEFAULT 0.5,
+      last_seen_at TEXT NOT NULL,
+      PRIMARY KEY (skill_type, skill_key)
+    ) STRICT;
+
+    CREATE TABLE IF NOT EXISTS error_log (
+      id INTEGER PRIMARY KEY,
+      item_type TEXT NOT NULL,
+      item_id INTEGER NOT NULL,
+      skill_key TEXT NOT NULL,
+      error_kind TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      resolved_at TEXT
+    ) STRICT;
+
+    CREATE INDEX IF NOT EXISTS idx_error_log_open ON error_log(resolved_at, created_at);
   `);
 }
 
@@ -132,13 +154,15 @@ function seed(db) {
   }
 
   const defaults = {
-    schemaVersion: 'SIDES-DB-V1',
+    schemaVersion: 'SIDES-DB-V2',
     placementLevel: 'UNASSESSED',
     placementCompleted: 'false',
+    spanishVariant: 'es',
     createdAt: new Date().toISOString()
   };
   const meta = db.prepare('INSERT OR IGNORE INTO meta(key,value) VALUES (?,?)');
   for (const [k,v] of Object.entries(defaults)) meta.run(k,v);
+  db.prepare('INSERT INTO meta(key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('schemaVersion','SIDES-DB-V2');
 }
 
 export function getMeta(db, key, fallback = null) {
