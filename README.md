@@ -105,4 +105,6 @@ Detalhes: `docs/JW-TRACK.md`.
 npm run check
 ```
 
-O GitHub Actions executa o gate em Node 24 usando a versão fixada das dependências. Dados reais de estudo, gravações e backups nunca devem ser adicionados ao Git.
+Gate do Bloco 4: GitHub Actions em Node 24, `actions/checkout@v7`, `actions/setup-node@v7`, dependência real `ts-fsrs@5.4.1`: **22 testes aprovados e 0 falhas**, incluindo migração real V2→V3 sem perda do estado legado.
+
+Dados reais de estudo, gravações e backups nunca devem ser adicionados ao Git.
