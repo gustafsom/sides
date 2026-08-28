@@ -6,9 +6,9 @@ import { createSidesServer } from '../src/server.mjs';
 
 const NOW=new Date('2026-08-28T12:00:00Z');
 
-test('V7 preserves versioned assignment tables without audio persistence columns',()=>{
+test('V8 preserves versioned assignment tables without audio persistence columns',()=>{
   const db=openDatabase(':memory:');
-  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V7');
+  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V8');
   assert.equal(db.prepare("SELECT value FROM meta WHERE key='assignmentSchemaVersion'").get().value,'SIDES-JW-ASSIGNMENTS-V1');
   const assignmentCols=db.prepare('PRAGMA table_info(jw_assignments)').all().map(x=>x.name);
   const practiceCols=db.prepare('PRAGMA table_info(jw_assignment_practices)').all().map(x=>x.name);
@@ -100,12 +100,12 @@ test('HTTP assignment API creates data and backup includes assignment history',a
     const {port}=server.address();
     const base=`http://127.0.0.1:${port}`;
     const health=await fetch(`${base}/api/health`).then(r=>r.json());
-    assert.equal(health.schema,'SIDES-API-V6');
+    assert.equal(health.schema,'SIDES-API-V7');
     const created=await fetch(`${base}/api/jw/assignments`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'reading',title:'API',dueDate:'2026-09-01',targetSeconds:180})}).then(r=>r.json());
     assert.ok(created.id>0);
     await fetch(`${base}/api/jw/assignments/${created.id}/practice`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({durationMs:170000,confidence:4,ratings:{naturalidad:3}})});
     const backup=await fetch(`${base}/api/export`).then(r=>r.json());
-    assert.equal(backup.schemaVersion,'SIDES-EXPORT-V6');
+    assert.equal(backup.schemaVersion,'SIDES-EXPORT-V7');
     assert.equal(backup.tables.jw_assignments.length,1);
     assert.equal(backup.tables.jw_assignment_practices.length,1);
     assert.equal('audio' in backup.tables.jw_assignment_practices[0],false);
