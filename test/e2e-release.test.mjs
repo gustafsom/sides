@@ -46,5 +46,5 @@ test('release E2E export remains complete and schema-compatible after normal sta
   assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V10');
   const integrity=await fetch(base+'/api/integrity/check',{method:'POST'});assert.equal(integrity.status,200);const checked=await integrity.json();assert.equal(checked.ok,true);
   const exported=await fetch(base+'/api/export');assert.equal(exported.status,200);assert.match(exported.headers.get('content-disposition')||'',/SIDES-backup-2026-08-28\.json/);
-  const body=await exported.json();assert.equal(body.schema,'SIDES-EXPORT-V9');assert.ok(body.tables);assert.ok(body.manifest);
+  const body=await exported.json();assert.equal(body.schemaVersion,'SIDES-EXPORT-V9');assert.ok(body.tables);assert.ok(body.manifest);
 }));
