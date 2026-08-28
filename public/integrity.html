@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>SIDES · Integridade e backup</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/integrity.css">
+</head>
+<body>
+<header class="topbar"><div><strong>SIDES</strong><span>Integridade, backup e recuperação</span></div><a class="ghost buttonLink" href="/">← Painel</a></header>
+<main class="integrityMain">
+  <section class="hero"><div><span class="eyebrow">Bloco 11</span><h1>Proteja seu progresso local.</h1><p>Backups SQLite verificados, exportação JSON completa e restauração segura sem enviar dados para a nuvem.</p></div><button id="checkBtn">Verificar agora</button></section>
+
+  <div id="statusCards" class="integrityStats"></div>
+
+  <div class="grid two">
+    <section class="card">
+      <div class="sectionTitle"><div><span class="eyebrow">SQLite</span><h2>Backup automático e manual</h2></div><button id="backupBtn">Criar backup agora</button></div>
+      <p class="sub">O SIDES cria backup automático quando o último estiver antigo, valida o arquivo e mantém uma rotação limitada.</p>
+      <div id="backupList" class="backupList"></div>
+    </section>
+    <section class="card">
+      <span class="eyebrow">Portabilidade</span><h2>Exportar ou importar JSON</h2>
+      <p class="sub">O JSON V9 inclui todas as tabelas do SIDES. Antes de importar, o sistema cria automaticamente um backup de segurança.</p>
+      <div class="actions"><button id="exportJsonBtn">Baixar JSON completo</button><label class="fileAction">Importar JSON<input id="importJsonInput" type="file" accept="application/json,.json"></label></div>
+      <p id="importNote" class="footerNote"></p>
+    </section>
+  </div>
+
+  <section class="card dangerZone">
+    <span class="eyebrow">Recuperação</span><h2>Restaurar banco SQLite</h2>
+    <p>Uma restauração é primeiro validada e preparada. O banco em uso <strong>não é substituído durante a sessão</strong>. Depois de preparar a restauração, feche e abra novamente o SIDES para aplicá-la.</p>
+    <label class="fileAction primary">Selecionar .sqlite para restaurar<input id="restoreInput" type="file" accept="application/vnd.sqlite3,application/x-sqlite3,.sqlite,.db"></label>
+    <p id="restoreNote" class="footerNote"></p>
+  </section>
+
+  <section class="card"><span class="eyebrow">Privacidade operacional</span><h2>Logs locais com retenção</h2><p class="sub">Os logs registram somente eventos técnicos de integridade, backup, importação e restauração. Não registram respostas de estudo, textos escritos, transcrições ou áudio. A retenção padrão é de 30 dias.</p></section>
+</main>
+<script type="module" src="/integrity.js"></script>
+</body>
+</html>
