@@ -13,16 +13,22 @@ import { createSidesServer } from '../src/server.mjs';
 const NOW=new Date('2026-08-28T15:00:00Z');
 
 test('word alignment distinguishes omissions substitutions additions and accent-only differences',()=>{
-  const exact=alignSpeech('El español es útil','El espanol es útil');
-  assert.equal(exact.counts.accent,1);
-  assert.equal(exact.accuracy,100);
-  assert.ok(exact.strictAccuracy<100);
+  const accent=alignSpeech('El español es útil','El espanol es útil');
+  assert.equal(accent.counts.accent,1);
+  assert.equal(accent.accuracy,100);
+  assert.ok(accent.strictAccuracy<100);
 
-  const changed=alignSpeech('Hoy vamos a leer despacio','Hoy vamos leer rápido ahora');
-  assert.ok(changed.counts.omit>=1);
-  assert.ok(changed.counts.substitute>=1);
-  assert.ok(changed.counts.add>=1);
-  assert.ok(changed.accuracy<100);
+  const omitted=alignSpeech('Hoy vamos a leer despacio','Hoy vamos leer despacio');
+  assert.equal(omitted.counts.omit,1);
+  assert.ok(omitted.accuracy<100);
+
+  const substituted=alignSpeech('Hoy vamos a leer despacio','Hoy vamos a leer rápido');
+  assert.equal(substituted.counts.substitute,1);
+  assert.ok(substituted.accuracy<100);
+
+  const added=alignSpeech('Hoy vamos a leer','Hoy vamos ahora a leer');
+  assert.equal(added.counts.add,1);
+  assert.equal(added.accuracy,100);
 });
 
 test('speech metrics expose pace and pause indicators without pretending to score accent',()=>{
