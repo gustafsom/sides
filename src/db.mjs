@@ -1,5 +1,5 @@
 import { mkdirSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { vocabularySeed, grammarSeed, listeningSeed, readingSeed, placementSeed } from './content.mjs';
 import { learningItemSeed } from './block4-content.mjs';
@@ -11,7 +11,12 @@ import { ensureImmersionSchema } from './immersion-service.mjs';
 import { ensurePlannerSchema } from './planner.mjs';
 import { applyPendingRestore, ensureIntegritySchema } from './integrity.mjs';
 
-export function openDatabase(path = resolve('data/sides.sqlite')) {
+export function defaultDatabasePath(env=process.env) {
+  const dataDir=String(env?.SIDES_DATA_DIR||'').trim();
+  return dataDir?resolve(dataDir,'sides.sqlite'):resolve('data/sides.sqlite');
+}
+
+export function openDatabase(path = defaultDatabasePath()) {
   const dbPath=path===':memory:'?path:resolve(path);
   if(dbPath!==':memory:'){
     mkdirSync(dirname(dbPath), { recursive: true });
