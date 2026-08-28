@@ -4,7 +4,7 @@
 
 ## Estado
 
-MVP `0.1.0` — roda somente em `127.0.0.1`, sem telemetria e sem APIs pagas.
+MVP `0.2.0` — roda somente em `127.0.0.1`, sem telemetria e sem APIs pagas.
 
 ## Iniciar
 
@@ -40,7 +40,9 @@ Não há dependências npm obrigatórias no MVP.
 - ditado/listening usando voz espanhola disponível no navegador/SO;
 - leitura com perguntas de recuperação;
 - shadowing com gravação local do microfone;
-- sessão diária intercalando habilidades;
+- sessão diária intercalando habilidades e priorizando pontos fracos;
+- mapa de domínio por habilidade e caderno de erros aberto até recuperação correta;
+- variante de espanhol configurável (internacional, Espanha, México e Argentina);
 - backup JSON do progresso;
 - persistência SQLite local;
 - binding exclusivo a `127.0.0.1`;
