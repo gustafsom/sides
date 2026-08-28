@@ -1,65 +1,102 @@
 # Roadmap do SIDES
 
-Os blocos são deliberadamente curtos e entregam valor funcional independente.
+Os blocos têm entrega funcional independente. A linha de chegada definida é o **SIDES 1.0.0 no Bloco 13**; ideias adicionais que não sejam necessárias para a 1.0 entram no backlog pós-1.0.
 
-## Bloco 1 — Fundação local (MVP)
+## Bloco 1 — Fundação local ✅
 
-- servidor loopback;
-- SQLite;
-- conteúdo inicial;
+- servidor loopback e SQLite;
 - diagnóstico A1–B2;
-- vocabulário com recuperação ativa e SRS;
-- gramática;
-- escuta com TTS do navegador;
-- leitura;
-- shadowing/gravação local;
+- vocabulário, gramática, escuta, leitura e shadowing;
 - XP, níveis, sequência, missão diária e conquistas;
-- backup JSON;
-- testes automatizados.
+- backup JSON e testes automatizados.
 
-## Bloco 2 — Motor adaptativo
+## Bloco 2 — Motor adaptativo V2 ✅
 
-Concluído na fundação adaptativa V2:
-
-- mapa de domínio por habilidade/tópico;
-- fila diária ajustada a erros, domínio e nível;
-- caderno automático de erros com resolução por recuperação correta;
+- domínio por habilidade/tópico;
+- fila ajustada a erros, domínio e nível;
+- caderno automático de erros;
 - variante de espanhol configurável.
 
-Próxima evolução do motor:
+## Bloco 3 — Trilha JW ✅
 
-- integrar FSRS completo;
+- vocabulário congregacional/bíblico;
+- 66 livros e abreviações da Bíblia;
+- leitura pública, comentários e discursos;
+- rubricas de autoavaliação;
+- links oficiais sem incorporar conteúdo protegido.
+
+## Bloco 4 — Motor de aprendizagem definitivo ✅ após gate do PR
+
+- FSRS estável e migração progressiva do SRS antigo;
+- frases/chunks;
 - contraste português ↔ espanhol e falsos cognatos;
-- revisão de frases/chunks.
+- histórico granular por habilidade;
+- índice de atenção pedagógica;
+- explicações e ações recomendadas;
+- dashboard de evolução;
+- controle de dívida de revisão para limitar conteúdo novo quando necessário.
 
-## Bloco 3 — Escuta e fala offline
+## Bloco 5 — Currículo A1–B2 completo
 
-- integrar `whisper.cpp` opcional;
-- integrar Piper opcional;
-- avaliação de pronúncia baseada em transcrição e alinhamento, sem afirmar precisão fonética que o modelo não mede;
-- ditado adaptativo;
-- shadowing com comparação temporal/textual.
+- expandir vocabulário, chunks, gramática, listening e leitura;
+- metadados de dificuldade, tema e pré-requisitos;
+- conteúdo suficiente para uso diário prolongado.
 
-## Bloco 4 — Gramática e escrita
+## Bloco 6 — Trilha JW avançada e designações reais
+
+- Minhas designações;
+- plano automático de preparação até a data;
+- histórico de ensaios e evolução;
+- leitura, comentários, discursos e preparação direcionada.
+
+## Bloco 7 — Escuta e fala offline
+
+- `whisper.cpp` opcional;
+- Piper opcional quando a licença da voz for adequada;
+- inteligibilidade baseada em transcrição/alinhamento;
+- ditado adaptativo e shadowing comparativo.
+
+## Bloco 8 — Gramática e escrita inteligente
 
 - LanguageTool local opcional;
-- exercícios de transformação e produção livre;
+- produção escrita livre;
 - classificação de erros;
-- repetição direcionada aos padrões de erro.
+- repetição direcionada aos padrões encontrados.
 
-## Bloco 5 — Conteúdo e imersão
+## Bloco 9 — Imersão e conversação prática
 
-- trilhas temáticas;
+- cenários cotidianos, viagem e congregação;
+- diálogos ramificados;
 - histórias graduadas;
-- diálogos situacionais;
-- modo viagem/conversação;
-- importação segura de conteúdo permitido pelo usuário, respeitando direitos autorais.
+- sessões predominantemente em espanhol.
 
-## Bloco 6 — Produto local maduro
+## Bloco 10 — Planejador diário e gamificação madura
 
-- backup/restauração completos;
-- atualização local segura;
-- empacotamento Windows;
-- testes end-to-end;
-- observabilidade exclusivamente local;
-- documentação operacional.
+- objetivo diário/semanal;
+- sessão montada automaticamente;
+- prioridade por revisões, fraquezas e designações próximas;
+- métricas por competência e proteção contra XP fácil/infinito.
+
+## Bloco 11 — Integridade, backup e recuperação
+
+- backup automático rotativo;
+- restauração validada;
+- migrações e recuperação de banco;
+- exportação/importação completa;
+- logs locais com retenção controlada.
+
+## Bloco 12 — Produto Windows instalável
+
+- instalação e atalhos;
+- execução sem terminal;
+- atualização opt-in segura;
+- verificação de pacote/checksum;
+- funcionamento local mesmo sem GitHub disponível.
+
+## Bloco 13 — Qualidade, segurança, SISDEV e Release 1.0
+
+- testes E2E e de migração;
+- auditoria de segurança/licenças;
+- gate local do SISDEV e fechamento do registro no Control Plane;
+- release, changelog, tags e rollback;
+- roteiro completo de aceitação.
