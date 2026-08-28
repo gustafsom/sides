@@ -1,0 +1,15 @@
+{
+  "name": "sides",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "SIDES - Sistema de Imersao e Desenvolvimento em Espanhol",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "test": "node --test",
+    "check": "node --check src/server.mjs && node --check src/db.mjs && node --check src/learning.mjs && node --test"
+  }
+}
