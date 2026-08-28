@@ -21,7 +21,7 @@ try{
   }catch{}
   Remove-Item -LiteralPath (Join-Path ([Environment]::GetFolderPath('Desktop')) 'SIDES.lnk') -Force -ErrorAction SilentlyContinue
   Remove-Item -LiteralPath (Join-Path ([Environment]::GetFolderPath('Programs')) 'SIDES') -Recurse -Force -ErrorAction SilentlyContinue
-  foreach($name in @('versions','SIDES.vbs','Run-SIDES.ps1','Atualizar-SIDES.vbs','Update-SIDES.ps1','Desinstalar-SIDES.ps1','install-state.json')){
+  foreach($name in @('versions','SIDES.vbs','Run-SIDES.ps1','Atualizar-SIDES.vbs','Update-SIDES.ps1','Desinstalar-SIDES.ps1','CONFIGURAR-VOZ-OFFLINE.ps1','CONFIGURAR-GRAMATICA-LOCAL.ps1','install-state.json')){
     Remove-Item -LiteralPath (Join-Path $InstallRoot $name) -Recurse -Force -ErrorAction SilentlyContinue
   }
   if($RemoveData){
