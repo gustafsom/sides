@@ -21,7 +21,8 @@ const guidance = {
   'writing:accent-spelling':['Acentuação e grafia','A forma lexical está próxima, mas a ortografia espanhola ainda não está automática.','Digite novamente as palavras corrigidas em frases diferentes, sem copiar.'],
   'writing:agreement':['Concordância na escrita','Gênero, número ou concordância entre os elementos ainda gera revisão.','Localize os pares relacionados e faça uma segunda versão mudando singular/plural.'],
   'writing:verb':['Formas verbais na escrita','A escolha ou formação verbal ainda aparece como ponto de revisão nos textos.','Identifique sujeito e tempo e reescreva a frase com outra pessoa verbal.'],
-  'writing:preposition':['Preposições na escrita','Preposições espanholas nem sempre correspondem diretamente às do português.','Memorize a combinação inteira e escreva duas frases com a mesma estrutura.']
+  'writing:preposition':['Preposições na escrita','Preposições espanholas nem sempre correspondem diretamente às do português.','Memorize a combinação inteira e escreva duas frases com a mesma estrutura.'],
+  'immersion:conversation':['Conversação em imersão','O histórico mostra que cumprir o objetivo comunicativo em tempo real ainda exige mais recuperação espontânea.','Faça um diálogo curto de Imersão e tente responder sem abrir a pista no primeiro turno.']
 };
 
 const genericByType = {
@@ -31,6 +32,7 @@ const genericByType = {
   reading:['Compreensão de leitura','A recuperação das ideias do texto ainda precisa de reforço.','Leia uma vez sem traduzir e responda com suas próprias palavras.'],
   speaking:['Produção oral','A habilidade oral melhora com repetição curta e frequente, não apenas com sessões longas.','Grave, ouça e repita uma segunda vez corrigindo um único aspecto.'],
   writing:['Produção escrita','O histórico de textos mostra um padrão recorrente que merece revisão direcionada.','Abra Escrita inteligente, faça um texto curto focado nesse padrão e reescreva após o feedback.'],
+  immersion:['Imersão e resposta espontânea','Este contexto ainda exige esforço para compreender a situação e produzir uma resposta adequada sem traduzir palavra por palavra.','Faça uma sessão curta de Imersão nesse contexto e priorize comunicar a intenção antes de buscar uma frase perfeita.'],
   chunk:['Frases e chunks','A expressão precisa se tornar uma unidade automática, sem tradução palavra por palavra.','Repita o chunk em três contextos diferentes.'],
   contrast:['Português x espanhol','Há interferência provável do português ou um falso cognato.','Estude o par em contraste e produza uma frase em espanhol.'],
   jw:['Trilha JW','Este ponto merece reforço para uso espontâneo em reuniões, leituras ou discursos.','Faça uma prática curta e específica na Trilha JW.']
