@@ -4,11 +4,11 @@
 
 ## Estado
 
-MVP evolutivo `0.11.0` — roda somente em `127.0.0.1`, sem telemetria e sem APIs pagas obrigatórias.
+MVP evolutivo `0.12.0` — roda somente em `127.0.0.1`, sem telemetria e sem APIs pagas obrigatórias.
 
-A versão 0.11.0 preserva os Blocos 1–10 e adiciona o **Bloco 11 — Integridade, backup e recuperação**: backup SQLite automático e rotativo, validação de integridade, exportação/importação completas, restauração segura no reinício e logs técnicos locais com retenção.
+A versão 0.12.0 preserva os Blocos 1–11 e adiciona o **Bloco 12 — Produto Windows instalável**: pacote x64 com Node portátil, instalação versionada, execução sem terminal, atualização local opt-in com checksum e dados persistentes separados do código.
 
-## Iniciar
+## Usar a partir do código-fonte
 
 Windows / PowerShell:
 
@@ -27,7 +27,42 @@ Componentes opcionais:
 
 Whisper e LanguageTool não são necessários para abrir o SIDES. Sem eles, fala continua com comparação manual, escrita mantém as regras locais e Imersão funciona por texto.
 
-## Requisitos
+## Produto Windows instalável
+
+O build Windows cria:
+
+```text
+SIDES-0.12.0-windows-x64.zip
+SIDES-0.12.0-windows-x64.zip.sha256
+```
+
+O pacote contém `node.exe`, `ts-fsrs@5.4.1`, a aplicação, instalador e launcher. Depois da instalação, a máquina não precisa ter Node, npm, Git ou acesso ao GitHub para executar o SIDES.
+
+Para construir em Windows:
+
+```powershell
+.\BUILD-WINDOWS-PACKAGE.ps1
+```
+
+Depois de extrair o ZIP, execute `INSTALAR-SIDES.vbs`. A instalação padrão fica em:
+
+```text
+%LOCALAPPDATA%\SIDES\
+  data\
+  versions\0.12.0\
+  SIDES.vbs
+  install-state.json
+```
+
+A pasta `data` é persistente e não pertence a nenhuma versão. O banco respeita `SIDES_DATA_DIR`; sem essa variável, o modo fonte continua usando `data/sides.sqlite`.
+
+O Menu Iniciar recebe atalhos para SIDES, atualização, configuração opcional de voz/gramática e desinstalação. A inicialização principal usa `wscript.exe` e não abre janela de terminal.
+
+A atualização é **opt-in**: o usuário escolhe um ZIP local. O SIDES exige o SHA-256 externo do ZIP, valida o manifesto interno e cada arquivo, rejeita versão não superior e instala a nova aplicação em outra pasta de `versions/`. O banco não é substituído.
+
+Detalhes: `docs/WINDOWS-PRODUCT.md`.
+
+## Requisitos do código-fonte
 
 - Node.js 22.13+ (ambiente-alvo Node 24);
 - npm na primeira preparação do código-fonte;
@@ -35,6 +70,8 @@ Whisper e LanguageTool não são necessários para abrir o SIDES. Sem eles, fala
 - microfone apenas para fala/conversação oral;
 - `whisper.cpp` opcional para transcrição local;
 - Java 17+ apenas para LanguageTool local.
+
+O pacote Windows principal já leva o runtime Node necessário.
 
 ## Currículo A1–B2 expandido
 
@@ -76,34 +113,13 @@ Detalhes: `docs/PLANNER.md`.
 
 `/integrity.html` centraliza a proteção dos dados locais.
 
-### Integridade
+O SIDES executa `PRAGMA quick_check` e `PRAGMA foreign_key_check`. O backup usa a API nativa de `node:sqlite`, grava primeiro um arquivo temporário e só aceita a cópia depois de validar integridade/tabelas essenciais e calcular SHA-256.
 
-O SIDES executa `PRAGMA quick_check` e `PRAGMA foreign_key_check`. O sub-schema `SIDES-INTEGRITY-V1` registra somente estado mínimo de manutenção em `maintenance_state`.
+Política padrão: **14** backups automáticos, **10** manuais, **5** pré-importação e **5** pré-restauração. O backup automático é verificado na inicialização e depois a cada 6 horas, criando novo arquivo quando o anterior tem 24 horas ou mais.
 
-### Backup SQLite automático e rotativo
+`SIDES-EXPORT-V9` inclui todas as tabelas da aplicação. A importação cria backup prévio, usa uma única transação e só confirma depois dos checks de integridade. A restauração de SQLite é preparada durante a sessão e aplicada no próximo início.
 
-O backup usa a API nativa de `node:sqlite`, grava primeiro um arquivo temporário e só o aceita depois de abrir a cópia, validar integridade/tabelas essenciais e calcular SHA-256.
-
-Política padrão:
-
-- **14** backups automáticos;
-- **10** manuais;
-- **5** pré-importação;
-- **5** pré-restauração.
-
-Ao iniciar, o SIDES tenta garantir um backup automático. Depois verifica a necessidade a cada 6 horas e só cria novo automático quando o último tem 24 horas ou mais. Os arquivos ficam em `data/backups/`.
-
-### Exportação/importação completas
-
-`SIDES-EXPORT-V9` inclui todas as tabelas da aplicação e um manifesto com a contagem de linhas. A importação rejeita tabelas desconhecidas, cria primeiro um backup `preimport` e substitui os dados dentro de uma única transação. `quick_check` e `foreign_key_check` precisam passar antes do `COMMIT`; falha implica `ROLLBACK`.
-
-### Restauração segura
-
-Um `.sqlite` enviado ou escolhido da lista é validado e preparado durante a sessão, mas **não substitui o banco que está aberto**. A troca ocorre no próximo início do SIDES, antes de abrir SQLite. O banco anterior e seus arquivos WAL/SHM são movidos para `data/recovery/` quando existirem, e o banco restaurado passa novamente pelas migrações normais até `SIDES-DB-V10`.
-
-### Logs técnicos
-
-Eventos de integridade, backup, importação e restauração ficam em `data/logs/` por até **30 dias**. O logger usa lista explícita de campos permitidos e não registra respostas de estudo, textos escritos, respostas de imersão, transcrições ou áudio.
+Logs técnicos ficam em `data/logs/` por até 30 dias e não recebem conteúdo livre do usuário.
 
 Detalhes: `docs/INTEGRITY-BACKUP.md`.
 
@@ -125,13 +141,16 @@ Detalhes: `docs/JW-TRACK.md`.
 - imersão com 32 cenários e 16 histórias;
 - metas diária/semanal e planejador coordenado;
 - XP efetivo com proteção anti-farming;
-- `quick_check` e verificação de chaves estrangeiras;
-- backup SQLite automático/manual com validação e rotação;
-- exportação JSON completa e importação transacional;
-- restauração SQLite preparada e aplicada no reinício;
+- integridade SQLite, backup rotativo, importação e restauração;
 - logs técnicos locais com retenção;
+- produto Windows x64 com Node portátil;
+- instalação versionada e dados separados;
+- execução sem terminal por atalho;
+- atualização opt-in por pacote local verificado;
+- desinstalação que preserva dados por padrão;
 - migração aditiva até `SIDES-DB-V10`;
 - sub-schemas `SIDES-JW-ASSIGNMENTS-V1`, `SIDES-SPEECH-V1`, `SIDES-WRITING-V1`, `SIDES-IMMERSION-V1`, `SIDES-PLANNER-V1` e `SIDES-INTEGRITY-V1`;
+- pacote `SIDES-WINDOWS-PACKAGE-V1`;
 - API local `SIDES-API-V9`;
 - export `SIDES-EXPORT-V9`;
 - binding exclusivo a `127.0.0.1`;
@@ -139,9 +158,10 @@ Detalhes: `docs/JW-TRACK.md`.
 
 ## Privacidade e custos
 
-- progresso em `data/sides.sqlite`;
-- backups em `data/backups/`, logs em `data/logs/` e contingência de restauração em `data/recovery/`;
-- `data/`, binários, modelos e LanguageTool local não são versionados;
+- progresso no SQLite local;
+- no modo instalado, dados ficam separados das versões da aplicação;
+- backups, logs e recuperação permanecem junto à pasta persistente de dados;
+- `data/`, `dist/`, binários opcionais, modelos e LanguageTool local não são versionados;
 - sem conta, token, telemetria ou API paga;
 - FSRS é local;
 - Whisper, Piper e LanguageTool são locais e opcionais;
@@ -156,6 +176,8 @@ Detalhes: `docs/JW-TRACK.md`.
 npm run check
 ```
 
-O gate cobre sintaxe, migração V2→V10, FSRS, currículo, Trilha JW, designações, fala, escrita, imersão, planejador, metas, XP efetivo, integridade SQLite, backup/rotação, exportação/importação, rollback, restauração no reinício, API e privacidade de schema/backup/logs.
+O gate Linux cobre sintaxe, migração V2→V10, FSRS, currículo, Trilha JW, designações, fala, escrita, imersão, planejador, XP, integridade/backup e o manifesto Windows.
 
-Dados reais de estudo, gravações, textos produzidos, respostas de conversa, modelos, binários, bancos e backups nunca devem ser adicionados ao Git.
+O gate `windows-latest` analisa os scripts PowerShell, constrói o ZIP real, verifica SHA-256/manifests e inicia o servidor usando o `node.exe` carregado dentro do próprio pacote. Em `main`, o pacote e seu checksum são publicados como artifact temporário do GitHub Actions.
+
+Dados reais de estudo, gravações, textos produzidos, respostas de conversa, modelos, binários, bancos, backups e pacotes `dist/` nunca devem ser adicionados ao Git.
