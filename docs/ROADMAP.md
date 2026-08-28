@@ -19,10 +19,16 @@ Os blocos são deliberadamente curtos e entregam valor funcional independente.
 
 ## Bloco 2 — Motor adaptativo
 
-- integrar FSRS completo;
+Concluído na fundação adaptativa V2:
+
 - mapa de domínio por habilidade/tópico;
-- fila diária ajustada a erros, retenção e nível;
-- caderno automático de erros;
+- fila diária ajustada a erros, domínio e nível;
+- caderno automático de erros com resolução por recuperação correta;
+- variante de espanhol configurável.
+
+Próxima evolução do motor:
+
+- integrar FSRS completo;
 - contraste português ↔ espanhol e falsos cognatos;
 - revisão de frases/chunks.
 
