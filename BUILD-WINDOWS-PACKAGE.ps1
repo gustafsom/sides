@@ -41,10 +41,20 @@ $payload=Join-Path $stage 'payload';New-Item -ItemType Directory -Path $payload 
 Copy-Item -LiteralPath (Join-Path $Root 'src') -Destination $payload -Recurse
 Copy-Item -LiteralPath (Join-Path $Root 'public') -Destination $payload -Recurse
 Copy-Item -LiteralPath (Join-Path $Root 'package.json') -Destination $payload
+Copy-Item -LiteralPath (Join-Path $Root 'THIRD_PARTY_NOTICES.md') -Destination $payload
 New-Item -ItemType Directory -Path (Join-Path $payload 'node_modules') -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $Root 'node_modules\ts-fsrs') -Destination (Join-Path $payload 'node_modules\ts-fsrs') -Recurse
 New-Item -ItemType Directory -Path (Join-Path $payload 'runtime') -Force | Out-Null
 Copy-Item -LiteralPath $NodePath -Destination (Join-Path $payload 'runtime\node.exe')
+
+$nodeDir=Split-Path -Parent $NodePath
+$nodeLicense=$null
+foreach($candidate in @('LICENSE','LICENSE.txt','LICENSE.md')){
+  $p=Join-Path $nodeDir $candidate
+  if(Test-Path -LiteralPath $p -PathType Leaf){$nodeLicense=$p;break}
+}
+if(-not $nodeLicense){Fail 'NODE_LICENSE_MISSING'}
+Copy-Item -LiteralPath $nodeLicense -Destination (Join-Path $payload 'runtime\NODE-LICENSE.txt')
 
 Copy-Item -LiteralPath (Join-Path $Root 'windows\INSTALAR-SIDES.ps1') -Destination (Join-Path $stage 'INSTALAR-SIDES.ps1')
 Copy-Item -LiteralPath (Join-Path $Root 'windows\INSTALAR-SIDES.vbs') -Destination (Join-Path $stage 'INSTALAR-SIDES.vbs')
