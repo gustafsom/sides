@@ -38,6 +38,7 @@ function streak(db, now = new Date()) {
   return n;
 }
 
+
 function computeAchievements({ total, currentStreak, correctRate }) {
   const defs = [
     ['primeiro-passo','Primeiro passo','Complete sua primeira atividade', total.attempts >= 1],
@@ -48,6 +49,46 @@ function computeAchievements({ total, currentStreak, correctRate }) {
     ['precisao-80','Precisão','Mantenha 80% de acerto após 25 atividades', total.attempts >= 25 && correctRate >= 80]
   ];
   return defs.map(([id,title,description,unlocked]) => ({id,title,description,unlocked}));
+}
+
+function updateMastery(db, { skillType, skillKey, correct, now }) {
+  const type = String(skillType || 'general');
+  const key = String(skillKey || 'general');
+  const current = db.prepare('SELECT * FROM skill_mastery WHERE skill_type=? AND skill_key=?').get(type,key);
+  const oldScore = current ? Number(current.score) : 0.5;
+  const outcome = correct ? 1 : 0;
+  const alpha = current && current.attempts >= 5 ? 0.18 : 0.28;
+  const score = Math.max(0,Math.min(1,oldScore*(1-alpha)+outcome*alpha));
+  db.prepare(`INSERT INTO skill_mastery(skill_type,skill_key,attempts,correct,score,last_seen_at)
+    VALUES (?,?,?,?,?,?) ON CONFLICT(skill_type,skill_key) DO UPDATE SET
+    attempts=skill_mastery.attempts+1,
+    correct=skill_mastery.correct+excluded.correct,
+    score=excluded.score,
+    last_seen_at=excluded.last_seen_at`).run(type,key,1,correct?1:0,score,now.toISOString());
+  return score;
+}
+
+function trackError(db,{itemType,itemId,skillKey,errorKind,correct,now}) {
+  if (correct) {
+    db.prepare('UPDATE error_log SET resolved_at=? WHERE item_type=? AND item_id=? AND resolved_at IS NULL')
+      .run(now.toISOString(),itemType,itemId);
+    return;
+  }
+  const existing=db.prepare('SELECT id FROM error_log WHERE item_type=? AND item_id=? AND resolved_at IS NULL ORDER BY id DESC LIMIT 1').get(itemType,itemId);
+  if (!existing) db.prepare('INSERT INTO error_log(item_type,item_id,skill_key,error_kind,created_at) VALUES (?,?,?,?,?)')
+    .run(itemType,itemId,String(skillKey||'general'),String(errorKind||'wrong'),now.toISOString());
+}
+
+export function learningInsights(db) {
+  const weakest=db.prepare(`SELECT skill_type,skill_key,attempts,correct,ROUND(score*100) score
+    FROM skill_mastery WHERE attempts>0 ORDER BY score ASC, attempts DESC LIMIT 5`).all();
+  const openErrors=db.prepare('SELECT COUNT(*) n FROM error_log WHERE resolved_at IS NULL').get().n;
+  return { weakestSkills: weakest, openErrors };
+}
+
+export function errorNotebook(db, limit=30) {
+  return db.prepare(`SELECT id,item_type,item_id,skill_key,error_kind,created_at
+    FROM error_log WHERE resolved_at IS NULL ORDER BY created_at DESC LIMIT ?`).all(Math.min(100,Math.max(1,Number(limit||30))));
 }
 
 export function dashboard(db, now = new Date()) {
@@ -63,19 +104,23 @@ export function dashboard(db, now = new Date()) {
       completed: getMeta(db,'placementCompleted','false') === 'true',
       level: getMeta(db,'placementLevel','UNASSESSED')
     },
+    preferences: { spanishVariant: getMeta(db,'spanishVariant','es') },
     today: day,
     total: { ...total, level: levelFromXp(total.xp), correctRate, streak: currentStreak },
     dueVocabulary: due,
     quest,
-    achievements: computeAchievements({ total, currentStreak, correctRate })
+    achievements: computeAchievements({ total, currentStreak, correctRate }),
+    insights: learningInsights(db)
   };
 }
 
 export function getVocabularyCard(db, now = new Date()) {
+  const level = getMeta(db,'placementLevel','A1');
+  const maxLevel = level === 'UNASSESSED' ? 'A1' : level;
   const row = db.prepare(`SELECT v.*, s.due_at, s.interval_days, s.ease, s.reps, s.lapses
     FROM srs s JOIN vocabulary v ON v.id=s.item_id
-    WHERE s.item_type='vocabulary' AND s.due_at <= ?
-    ORDER BY s.due_at ASC, s.reps ASC, v.id ASC LIMIT 1`).get(now.toISOString());
+    WHERE s.item_type='vocabulary' AND s.due_at <= ? AND v.level <= ?
+    ORDER BY s.due_at ASC, s.reps ASC, v.id ASC LIMIT 1`).get(now.toISOString(),maxLevel);
   return row || null;
 }
 
@@ -104,7 +149,7 @@ export function submitVocabulary(db, payload, now = new Date()) {
     WHERE item_type='vocabulary' AND item_id=?`).run(next.dueAt,next.intervalDays,next.ease,next.reps,next.lapses,next.lastReviewAt,next.scheduler,id);
   const currentStreak = streak(db, now);
   const xp = xpForAttempt({ correct: quality.score >= 0.8, mode:'vocabulary', rating, streak:currentStreak });
-  recordAttempt(db,{itemType:'vocabulary',itemId:id,mode:'vocabulary',rating,correct:quality.score>=0.8,responseMs:Number(payload.responseMs||0),xp,now});
+  recordAttempt(db,{itemType:'vocabulary',itemId:id,mode:'vocabulary',skillKey:card.tags||card.level,errorKind:quality.status,rating,correct:quality.score>=0.8,responseMs:Number(payload.responseMs||0),xp,now});
   return { quality, expected: card.spanish, example: card.example_es, translation: card.portuguese, nextDueAt: next.dueAt, intervalDays: next.intervalDays, xp };
 }
 
@@ -119,7 +164,7 @@ export function submitGrammar(db, payload, now = new Date()) {
   const quality = answerQuality(payload.answer, JSON.parse(item.answers_json));
   const correct = quality.score >= 0.8;
   const xp = xpForAttempt({correct,mode:'grammar',rating:correct?3:1,streak:streak(db, now)});
-  recordAttempt(db,{itemType:'grammar',itemId:item.id,mode:'grammar',rating:correct?3:1,correct,responseMs:Number(payload.responseMs||0),xp,now});
+  recordAttempt(db,{itemType:'grammar',itemId:item.id,mode:'grammar',skillKey:item.skill,errorKind:quality.status,rating:correct?3:1,correct,responseMs:Number(payload.responseMs||0),xp,now});
   return { quality, expected: JSON.parse(item.answers_json), explanation:item.explanation, xp };
 }
 
@@ -134,7 +179,7 @@ export function submitListening(db, payload, now = new Date()) {
   const quality = answerQuality(payload.answer, item.text);
   const correct = quality.score >= 0.8;
   const xp = xpForAttempt({correct,mode:'listening',rating:correct?3:1,streak:streak(db, now)});
-  recordAttempt(db,{itemType:'listening',itemId:item.id,mode:'listening',rating:correct?3:1,correct,responseMs:Number(payload.responseMs||0),xp,now});
+  recordAttempt(db,{itemType:'listening',itemId:item.id,mode:'listening',skillKey:`listening-${item.level}`,errorKind:quality.status,rating:correct?3:1,correct,responseMs:Number(payload.responseMs||0),xp,now});
   return { quality, expected:item.text, translation:item.translation, xp };
 }
 
@@ -154,7 +199,7 @@ export function submitReading(db, payload, now = new Date()) {
   const correct = details.filter(x=>x.score>=0.8).length;
   const isCorrect = correct >= Math.ceil(questions.length*0.7);
   const xp = xpForAttempt({correct:isCorrect,mode:'reading',rating:isCorrect?3:1,streak:streak(db, now)});
-  recordAttempt(db,{itemType:'reading',itemId:item.id,mode:'reading',rating:isCorrect?3:1,correct:isCorrect,responseMs:Number(payload.responseMs||0),xp,now});
+  recordAttempt(db,{itemType:'reading',itemId:item.id,mode:'reading',skillKey:`reading-${item.level}`,errorKind:isCorrect?'correct':'comprehension',rating:isCorrect?3:1,correct:isCorrect,responseMs:Number(payload.responseMs||0),xp,now});
   return { correct, total:questions.length, details, xp };
 }
 
@@ -184,16 +229,41 @@ export function submitPlacement(db, payload, now = new Date()) {
   return { level, scoreByLevel, correct, total:items.length, xp };
 }
 
+export function updatePreferences(db, payload = {}) {
+  const allowed = new Set(['es','es-ES','es-MX','es-AR']);
+  const spanishVariant = String(payload.spanishVariant || 'es');
+  if (!allowed.has(spanishVariant)) throw new Error('SPANISH_VARIANT_INVALID');
+  setMeta(db,'spanishVariant',spanishVariant);
+  return { spanishVariant };
+}
+
 export function dailySession(db, limit=20) {
   const now = new Date().toISOString();
-  const dueVocabulary = db.prepare(`SELECT v.id,v.spanish,v.portuguese,v.example_es,v.level FROM srs s JOIN vocabulary v ON v.id=s.item_id WHERE s.item_type='vocabulary' AND s.due_at<=? ORDER BY s.due_at LIMIT 30`).all(now);
-  const grammar = db.prepare('SELECT id,prompt,level,skill FROM grammar_exercises ORDER BY RANDOM() LIMIT 6').all();
-  const listening = db.prepare('SELECT id,text,level FROM listening_items ORDER BY RANDOM() LIMIT 4').all();
-  const reading = db.prepare('SELECT id,title,level FROM reading_texts ORDER BY RANDOM() LIMIT 2').all();
+  const level = getMeta(db,'placementLevel','A1');
+  const maxLevel = level === 'UNASSESSED' ? 'A1' : level;
+  const dueVocabulary = db.prepare(`SELECT v.id,v.spanish,v.portuguese,v.example_es,v.level FROM srs s JOIN vocabulary v ON v.id=s.item_id WHERE s.item_type='vocabulary' AND s.due_at<=? AND v.level<=? ORDER BY s.due_at LIMIT 30`).all(now,maxLevel);
+  const grammar = db.prepare(`SELECT g.id,g.prompt,g.level,g.skill
+    FROM grammar_exercises g
+    LEFT JOIN skill_mastery m ON m.skill_type='grammar' AND m.skill_key=g.skill
+    WHERE g.level <= ?
+    ORDER BY (SELECT COUNT(*) FROM error_log e WHERE e.item_type='grammar' AND e.item_id=g.id AND e.resolved_at IS NULL) DESC,
+      COALESCE(m.score,0.5) ASC, RANDOM() LIMIT 6`).all(maxLevel);
+  const listening = db.prepare(`SELECT l.id,l.text,l.level
+    FROM listening_items l
+    LEFT JOIN skill_mastery m ON m.skill_type='listening' AND m.skill_key=('listening-' || l.level)
+    WHERE l.level <= ?
+    ORDER BY (SELECT COUNT(*) FROM error_log e WHERE e.item_type='listening' AND e.item_id=l.id AND e.resolved_at IS NULL) DESC,
+      COALESCE(m.score,0.5) ASC, RANDOM() LIMIT 4`).all(maxLevel);
+  const reading = db.prepare(`SELECT r.id,r.title,r.level
+    FROM reading_texts r
+    LEFT JOIN skill_mastery m ON m.skill_type='reading' AND m.skill_key=('reading-' || r.level)
+    WHERE r.level <= ?
+    ORDER BY (SELECT COUNT(*) FROM error_log e WHERE e.item_type='reading' AND e.item_id=r.id AND e.resolved_at IS NULL) DESC,
+      COALESCE(m.score,0.5) ASC, RANDOM() LIMIT 2`).all(maxLevel);
   return selectInterleavedSession({dueVocabulary,grammar,listening,reading,limit});
 }
 
-function recordAttempt(db,{itemType,itemId,mode,rating,correct,responseMs,xp,now}) {
+function recordAttempt(db,{itemType,itemId,mode,skillKey='general',errorKind='wrong',rating,correct,responseMs,xp,now}) {
   db.prepare('INSERT INTO reviews(item_type,item_id,mode,rating,correct,response_ms,xp,reviewed_at) VALUES (?,?,?,?,?,?,?,?)')
     .run(itemType,itemId,mode,rating,correct?1:0,responseMs,xp,now.toISOString());
   const day = todayKey(now);
@@ -201,18 +271,20 @@ function recordAttempt(db,{itemType,itemId,mode,rating,correct,responseMs,xp,now
   const allowed = new Set(['vocabulary','grammar','listening','reading','speaking']);
   const column = allowed.has(mode) ? mode : 'vocabulary';
   db.prepare(`UPDATE activity SET xp=xp+?, attempts=attempts+1, correct=correct+?, ${column}=${column}+1 WHERE day=?`).run(xp,correct?1:0,day);
+  updateMastery(db,{skillType:mode,skillKey,correct,now});
+  trackError(db,{itemType,itemId,skillKey,errorKind,correct,now});
 }
 
 export function completeSpeaking(db, payload, now = new Date()) {
   const itemId = Number(payload.id || 0);
   const effort = Math.max(1, Math.min(4, Number(payload.effort || 3)));
   const xp = xpForAttempt({correct:true,mode:'speaking',rating:effort,streak:streak(db, now)});
-  recordAttempt(db,{itemType:'speaking',itemId,mode:'speaking',rating:effort,correct:true,responseMs:Number(payload.responseMs||0),xp,now});
+  recordAttempt(db,{itemType:'speaking',itemId,mode:'speaking',skillKey:'shadowing',errorKind:'self_assessed',rating:effort,correct:true,responseMs:Number(payload.responseMs||0),xp,now});
   return {xp};
 }
 
 export function exportData(db) {
-  const tables = ['meta','vocabulary','srs','reviews','activity'];
+  const tables = ['meta','vocabulary','srs','reviews','activity','skill_mastery','error_log'];
   const out = { schemaVersion:'SIDES-EXPORT-V1', exportedAt:new Date().toISOString(), tables:{} };
   for (const table of tables) out.tables[table] = db.prepare(`SELECT * FROM ${table}`).all();
   return out;
