@@ -8,18 +8,19 @@ import { openDatabase } from '../src/db.mjs';
 import { dashboard, getVocabularyCard, nextLearningItem, progressDashboard, randomGrammar, submitGrammar, submitLearningItem, submitVocabulary } from '../src/service.mjs';
 import { SCHEDULER_ID, scheduleFsrs } from '../src/fsrs-adapter.mjs';
 
-test('V5 schema keeps FSRS state, adaptive history, curriculum and assignments',()=>{
+test('V6 schema keeps FSRS state, adaptive history, curriculum, assignments and speech metrics',()=>{
   const db=openDatabase(':memory:');
-  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V5');
+  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V6');
   const columns=new Set(db.prepare('PRAGMA table_info(srs)').all().map(x=>x.name));
   for(const name of ['stability','difficulty','elapsed_days','scheduled_days','learning_steps','state']) assert.ok(columns.has(name));
   assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='skill_events'").get());
   assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='curriculum_meta'").get());
   assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='jw_assignments'").get());
   assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='jw_assignment_practices'").get());
+  assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='speech_attempts'").get());
 });
 
-test('real V2 database migration preserves study data and legacy review state through V5',()=>{
+test('real V2 database migration preserves study data and legacy review state through V6',()=>{
   const dir=mkdtempSync(join(tmpdir(),'sides-v2-'));
   const path=join(dir,'sides.sqlite');
   try{
@@ -46,8 +47,9 @@ test('real V2 database migration preserves study data and legacy review state th
     assert.equal(state.lapses,2);
     assert.equal(state.scheduler,'SIDES-SRS-V1');
     assert.equal(db.prepare("SELECT value FROM meta WHERE key='placementLevel'").get().value,'B1');
-    assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V5');
+    assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V6');
     assert.equal(db.prepare("SELECT value FROM meta WHERE key='assignmentSchemaVersion'").get().value,'SIDES-JW-ASSIGNMENTS-V1');
+    assert.equal(db.prepare("SELECT value FROM meta WHERE key='speechSchemaVersion'").get().value,'SIDES-SPEECH-V1');
     db.close();
   } finally { rmSync(dir,{recursive:true,force:true}); }
 });
