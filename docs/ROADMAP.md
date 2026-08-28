@@ -54,7 +54,7 @@ Os blocos têm entrega funcional independente. A linha de chegada definida é o 
 - 104 textos graduados;
 - metas reais do banco: 1.200 / 600 / 300 / 200 / 100;
 - novos temas em todos os níveis A1–B2;
-- 200 expressões adicionais dão margem para deduplicação lexical.
+- margem para deduplicação lexical.
 
 ## Bloco 6 — Trilha JW avançada e designações reais ✅
 
@@ -69,18 +69,27 @@ Os blocos têm entrega funcional independente. A linha de chegada definida é o 
 - confiança e rubricas;
 - prontidão 0–100;
 - rubricas mais fracas transformadas em foco do próximo ensaio;
-- status planejada, praticando, pronta, concluída ou cancelada;
 - próxima designação visível no painel principal;
 - designações incluídas no backup JSON;
 - migração aditiva para `SIDES-DB-V5`;
 - nenhum texto oficial importado ou copiado automaticamente.
 
-## Bloco 7 — Escuta e fala offline
+## Bloco 7 — Escuta e fala offline ✅
 
-- `whisper.cpp` opcional;
-- Piper opcional quando a licença da voz for adequada;
-- inteligibilidade baseada em transcrição/alinhamento;
-- ditado adaptativo e shadowing comparativo.
+- `whisper.cpp` local e opcional, com falha segura quando ausente;
+- instalador Windows separado, com build/modelo verificados por checksum;
+- conversão do áudio no navegador para WAV PCM16 mono 16 kHz, sem FFmpeg;
+- reconhecimento em espanhol e processamento somente local;
+- alinhamento palavra a palavra entre texto-alvo e hipótese reconhecida;
+- omissões, substituições, adições e diferenças de acentuação/grafia;
+- ritmo, pausas longas e silêncio como indicadores de fluência;
+- recomendações específicas para o próximo treino;
+- shadowing e leitura com alvos do currículo A1–B2;
+- texto próprio temporário para leituras/designações;
+- histórico de métricas e domínio adaptativo de fala;
+- áudio, transcrição e texto-alvo não são persistidos;
+- Piper opcional e SpeechSynthesis do navegador/SO como fallback;
+- migração aditiva para `SIDES-DB-V6`.
 
 ## Bloco 8 — Gramática e escrita inteligente
 
