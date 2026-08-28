@@ -8,10 +8,11 @@ import { createSidesServer } from '../src/server.mjs';
 
 const NOW=new Date('2026-08-28T18:00:00-03:00');
 
-test('V9 adds planner goals without losing previous subsystem schemas',()=>{
+test('V10 preserves planner goals while adding integrity',()=>{
   const db=openDatabase(':memory:');
-  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V9');
+  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V10');
   assert.equal(db.prepare("SELECT value FROM meta WHERE key='plannerSchemaVersion'").get().value,'SIDES-PLANNER-V1');
+  assert.equal(db.prepare("SELECT value FROM meta WHERE key='integritySchemaVersion'").get().value,'SIDES-INTEGRITY-V1');
   assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='study_goals'").get());
   for(const key of ['assignmentSchemaVersion','speechSchemaVersion','writingSchemaVersion','immersionSchemaVersion'])assert.ok(db.prepare('SELECT value FROM meta WHERE key=?').get(key));
 });
@@ -102,11 +103,11 @@ test('HTTP planner API updates goals and export contains configuration, not gene
   await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve)});
   try{
     const {port}=server.address(),base=`http://127.0.0.1:${port}`;
-    const health=await fetch(`${base}/api/health`).then(r=>r.json());assert.equal(health.schema,'SIDES-API-V8');
+    const health=await fetch(`${base}/api/health`).then(r=>r.json());assert.equal(health.schema,'SIDES-API-V9');
     const planner=await fetch(`${base}/api/planner/today`).then(r=>r.json());assert.equal(planner.schema,'SIDES-PLANNER-V1');assert.ok(planner.plan.items.length>0);
     const goals=await fetch(`${base}/api/planner/goals`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dailyMinutes:30,weeklyMinutes:160,weeklyDays:6,preferredSessionMinutes:25})}).then(r=>r.json());assert.equal(goals.dailyMinutes,30);
     const rewards=await fetch(`${base}/api/rewards`).then(r=>r.json());assert.equal(rewards.policy,'SIDES-XP-V2');
-    const backup=await fetch(`${base}/api/export`).then(r=>r.json());assert.equal(backup.schemaVersion,'SIDES-EXPORT-V8');assert.equal(backup.tables.study_goals.length,1);assert.equal('daily_plan' in backup.tables,false);
+    const backup=await fetch(`${base}/api/export`).then(r=>r.json());assert.equal(backup.schemaVersion,'SIDES-EXPORT-V9');assert.equal(backup.tables.study_goals.length,1);assert.equal('daily_plan' in backup.tables,false);
   } finally {await new Promise(resolve=>server.close(resolve));}
 });
 
