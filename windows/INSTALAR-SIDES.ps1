@@ -107,7 +107,7 @@ try{
     }catch{Remove-Item -LiteralPath $tempTarget -Recurse -Force -ErrorAction SilentlyContinue;throw}
   }
 
-  foreach($name in @('SIDES.vbs','Run-SIDES.ps1','Atualizar-SIDES.vbs','Update-SIDES.ps1','Desinstalar-SIDES.ps1')){
+  foreach($name in @('SIDES.vbs','Run-SIDES.ps1','Atualizar-SIDES.vbs','Update-SIDES.ps1','Desinstalar-SIDES.ps1','CONFIGURAR-VOZ-OFFLINE.ps1','CONFIGURAR-GRAMATICA-LOCAL.ps1')){
     Copy-Item -LiteralPath (Join-Path $PackageRoot ('launcher\'+$name)) -Destination (Join-Path $InstallRoot $name) -Force
   }
 
@@ -129,6 +129,8 @@ try{
   New-Shortcut (Join-Path $menuDir 'SIDES.lnk') $wscript ('"'+(Join-Path $InstallRoot 'SIDES.vbs')+'"') $InstallRoot
   New-Shortcut (Join-Path $menuDir 'Atualizar SIDES.lnk') $wscript ('"'+(Join-Path $InstallRoot 'Atualizar-SIDES.vbs')+'"') $InstallRoot
   $powershell=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
+  New-Shortcut (Join-Path $menuDir 'Configurar voz offline.lnk') $powershell ('-NoProfile -ExecutionPolicy Bypass -File "'+(Join-Path $InstallRoot 'CONFIGURAR-VOZ-OFFLINE.ps1')+'"') $InstallRoot
+  New-Shortcut (Join-Path $menuDir 'Configurar gramatica local.lnk') $powershell ('-NoProfile -ExecutionPolicy Bypass -File "'+(Join-Path $InstallRoot 'CONFIGURAR-GRAMATICA-LOCAL.ps1')+'"') $InstallRoot
   New-Shortcut (Join-Path $menuDir 'Desinstalar SIDES.lnk') $powershell ('-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "'+(Join-Path $InstallRoot 'Desinstalar-SIDES.ps1')+'"') $InstallRoot
 
   if(-not $NoLaunch){Start-Process -FilePath $wscript -ArgumentList ('"'+(Join-Path $InstallRoot 'SIDES.vbs')+'"') -WorkingDirectory $InstallRoot | Out-Null}
