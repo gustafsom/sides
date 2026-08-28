@@ -9,14 +9,16 @@ function renderDashboard(){
   const stats=[['XP',dash.total.xp],['Nível',dash.total.level],['Sequência',`${dash.total.streak} dia(s)`],['Precisão',`${dash.total.correctRate}%`],['Revisões',dash.dueVocabulary]];
   $('#stats').innerHTML=stats.map(([l,v])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
   $('#achievements').innerHTML=dash.achievements.map(a=>`<span title="${safe(a.description)}">${a.unlocked?'🏆':'🔒'} ${safe(a.title)}</span>`).join('');
+  $('#adaptiveFocus').innerHTML=dash.insights.weakestSkills.length?`<p class="sub">O SIDES dará prioridade a estes pontos:</p><div class="principles">${dash.insights.weakestSkills.map(x=>`<span>${safe(x.skill_key)} · ${x.score}%</span>`).join('')}</div><p class="footerNote">${dash.insights.openErrors} erro(s) ainda aguardam recuperação correta.</p>`:'<p class="sub">Pratique algumas atividades para o sistema identificar seus pontos mais frágeis.</p>';
   $('#quest').innerHTML=dash.quest.rows.map(x=>`<div class="questRow"><div><b>${label(x.key)}</b><div class="bar"><i style="width:${Math.round(x.value/x.target*100)}%"></i></div></div><span>${x.value}/${x.target}</span></div>`).join('')+`<p class="footerNote">${dash.quest.percent}% da missão concluída. A sequência conta consistência, não perfeição.</p>`;
+  $('#variantSelect').value=dash.preferences.spanishVariant||'es';$('#variantSelect').onchange=async e=>{await api('/api/preferences',{method:'POST',body:JSON.stringify({spanishVariant:e.target.value})});await refresh()};
 }
 function label(k){return {reviews:'Revisões',grammar:'Gramática',listening:'Escuta',reading:'Leitura'}[k]||k}
 function showPractice(mode,title){$('#dashboardView').classList.add('hidden');$('#practiceView').classList.remove('hidden');$('#modeLabel').textContent='Treino';$('#practiceTitle').textContent=title;$('#xpToast').textContent='';$('#practiceCard').innerHTML='<p>Carregando...</p>';startedAt=performance.now();return mode}
 function back(){stopRecording();$('#practiceView').classList.add('hidden');$('#dashboardView').classList.remove('hidden');refresh()}
 function feedbackClass(status){return status==='correct'?'correct':status==='accent'?'accent':'wrong'}
 function safe(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-function speak(text,rate=1){if(!('speechSynthesis'in window))return alert('Seu navegador não oferece síntese de voz.');speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='es-ES';u.rate=rate;const voices=speechSynthesis.getVoices();u.voice=voices.find(v=>v.lang?.toLowerCase().startsWith('es'))||null;speechSynthesis.speak(u)}
+function speak(text,rate=1){if(!('speechSynthesis'in window))return alert('Seu navegador não oferece síntese de voz.');speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang=dash?.preferences?.spanishVariant||'es';u.rate=rate;const voices=speechSynthesis.getVoices();const pref=(dash?.preferences?.spanishVariant||'es').toLowerCase();u.voice=voices.find(v=>v.lang?.toLowerCase()===pref)||voices.find(v=>v.lang?.toLowerCase().startsWith('es'))||null;speechSynthesis.speak(u)}
 function xpToast(xp){$('#xpToast').textContent=`+${xp} XP`}
 
 async function vocabulary(){showPractice('vocabulary','Recuperação ativa');const {item}=await api('/api/vocabulary/next');current=item;if(!item){$('#practiceCard').innerHTML='<p class="prompt">Tudo revisado por agora 🎯</p><p class="sub">Volte depois ou pratique outra habilidade.</p>';return}
