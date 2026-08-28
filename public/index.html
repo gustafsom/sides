@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>SIDES · Espanhol</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div><strong>SIDES</strong><span>Sistema de Imersão e Desenvolvimento em Espanhol</span></div>
+    <button id="exportBtn" class="ghost">Backup</button>
+  </header>
+  <main>
+    <section id="placementBanner" class="banner hidden">
+      <div><strong>Diagnóstico inicial</strong><p>Calibre seu nível antes de começar o plano adaptativo.</p></div>
+      <button data-view="placement">Fazer diagnóstico</button>
+    </section>
+
+    <section id="dashboardView" class="view">
+      <div class="hero">
+        <div><span class="eyebrow">Hoje</span><h1>Progresso consistente vence maratonas.</h1><p id="heroText">Carregando seu plano...</p></div>
+        <button id="startSession">Começar sessão</button>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="grid two">
+        <section class="card"><h2>Missão diária</h2><div id="quest"></div></section>
+        <section class="card"><h2>Treino rápido</h2><div class="quick">
+          <button data-view="vocabulary">Vocabulário</button><button data-view="grammar">Gramática</button>
+          <button data-view="listening">Escuta</button><button data-view="reading">Leitura</button>
+          <button data-view="speaking">Fala / shadowing</button><button data-view="placement">Diagnóstico</button>
+        </div></section>
+      </div>
+      <section class="card"><h2>Conquistas</h2><div id="achievements" class="principles"></div></section>
+      <section class="card"><h2>Como o SIDES aprende com você</h2><div class="principles">
+        <span>Recuperação ativa</span><span>Repetição espaçada</span><span>Interleaving</span><span>Feedback imediato</span><span>Escuta graduada</span><span>Produção ativa</span>
+      </div></section>
+    </section>
+
+    <section id="practiceView" class="view hidden">
+      <div class="practiceHead"><button id="backBtn" class="ghost">← Painel</button><div><span id="modeLabel" class="eyebrow"></span><h1 id="practiceTitle"></h1></div><span id="xpToast"></span></div>
+      <section id="practiceCard" class="practice card"></section>
+    </section>
+  </main>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
