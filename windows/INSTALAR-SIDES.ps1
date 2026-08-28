@@ -76,6 +76,7 @@ try{
   $payload=Join-Path $PackageRoot 'payload'
   $runtimeNode=Join-Path $payload 'runtime\node.exe'
   if(-not (Test-Path -LiteralPath $runtimeNode)){ Fail 'PORTABLE_NODE_MISSING' }
+  if(-not (Test-Path -LiteralPath (Join-Path $payload 'runtime\NODE-LICENSE.txt'))){ Fail 'PORTABLE_NODE_LICENSE_MISSING' }
   $nodeVersion=(& $runtimeNode -p "process.versions.node").Trim()
   $parts=$nodeVersion.Split('.')
   if(([int]$parts[0] -lt 22) -or (([int]$parts[0] -eq 22) -and ([int]$parts[1] -lt 13))){ Fail "PORTABLE_NODE_TOO_OLD:$nodeVersion" }
@@ -107,7 +108,7 @@ try{
     }catch{Remove-Item -LiteralPath $tempTarget -Recurse -Force -ErrorAction SilentlyContinue;throw}
   }
 
-  foreach($name in @('SIDES.vbs','Run-SIDES.ps1','Atualizar-SIDES.vbs','Update-SIDES.ps1','Desinstalar-SIDES.ps1','CONFIGURAR-VOZ-OFFLINE.ps1','CONFIGURAR-GRAMATICA-LOCAL.ps1')){
+  foreach($name in @('SIDES.vbs','Run-SIDES.ps1','Atualizar-SIDES.vbs','Update-SIDES.ps1','Rollback-SIDES.vbs','Rollback-SIDES.ps1','Desinstalar-SIDES.ps1','CONFIGURAR-VOZ-OFFLINE.ps1','CONFIGURAR-GRAMATICA-LOCAL.ps1')){
     Copy-Item -LiteralPath (Join-Path $PackageRoot ('launcher\'+$name)) -Destination (Join-Path $InstallRoot $name) -Force
   }
 
@@ -128,6 +129,7 @@ try{
   $menuDir=Join-Path $programs 'SIDES'
   New-Shortcut (Join-Path $menuDir 'SIDES.lnk') $wscript ('"'+(Join-Path $InstallRoot 'SIDES.vbs')+'"') $InstallRoot
   New-Shortcut (Join-Path $menuDir 'Atualizar SIDES.lnk') $wscript ('"'+(Join-Path $InstallRoot 'Atualizar-SIDES.vbs')+'"') $InstallRoot
+  New-Shortcut (Join-Path $menuDir 'Restaurar versao anterior.lnk') $wscript ('"'+(Join-Path $InstallRoot 'Rollback-SIDES.vbs')+'"') $InstallRoot
   $powershell=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
   New-Shortcut (Join-Path $menuDir 'Configurar voz offline.lnk') $powershell ('-NoProfile -ExecutionPolicy Bypass -File "'+(Join-Path $InstallRoot 'CONFIGURAR-VOZ-OFFLINE.ps1')+'"') $InstallRoot
   New-Shortcut (Join-Path $menuDir 'Configurar gramatica local.lnk') $powershell ('-NoProfile -ExecutionPolicy Bypass -File "'+(Join-Path $InstallRoot 'CONFIGURAR-GRAMATICA-LOCAL.ps1')+'"') $InstallRoot
