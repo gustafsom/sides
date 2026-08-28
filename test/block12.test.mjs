@@ -18,6 +18,7 @@ function fakePackage(root){
   const required=[
     'INSTALAR-SIDES.ps1','INSTALAR-SIDES.vbs','launcher/SIDES.vbs','launcher/Run-SIDES.ps1',
     'launcher/Atualizar-SIDES.vbs','launcher/Update-SIDES.ps1','launcher/Desinstalar-SIDES.ps1',
+    'launcher/CONFIGURAR-VOZ-OFFLINE.ps1','launcher/CONFIGURAR-GRAMATICA-LOCAL.ps1',
     'payload/package.json','payload/runtime/node.exe','payload/src/server.mjs','payload/public/index.html','payload/node_modules/ts-fsrs/package.json'
   ];
   for(const path of required)file(root,path,path==='payload/package.json'?JSON.stringify({name:'sides',version:'0.12.0'}):path);
@@ -63,8 +64,9 @@ test('Windows launcher separates immutable versions from persistent data and has
   const update=readFileSync(new URL('../windows/launcher/Update-SIDES.ps1',import.meta.url),'utf8');
   const uninstall=readFileSync(new URL('../windows/launcher/Desinstalar-SIDES.ps1',import.meta.url),'utf8');
   assert.match(install,/SIDES-INSTALL-V1/);assert.match(install,/versions\\/);assert.match(install,/dataDir/);
+  assert.match(install,/CONFIGURAR-VOZ-OFFLINE\.ps1/);assert.match(install,/CONFIGURAR-GRAMATICA-LOCAL\.ps1/);
   assert.match(run,/SIDES_DATA_DIR/);assert.match(run,/runtime\\node\.exe/);assert.match(run,/WorkingDirectory \$InstallRoot/);
-  assert.equal(/github\.com/i.test(run),false);
+  assert.match(run,/SIDES_WHISPER_BIN/);assert.match(run,/SIDES_LANGUAGETOOL_URL/);assert.equal(/github\.com/i.test(run),false);
   assert.match(update,/UPDATE_EXTERNAL_CHECKSUM_REQUIRED/);assert.match(update,/Get-FileHash/);assert.match(update,/UpdateOnly/);
   assert.match(uninstall,/dados de estudo serao preservados por padrao/i);assert.match(uninstall,/RemoveData/);
   assert.equal(WINDOWS_INSTALL_SCHEMA,'SIDES-INSTALL-V1');
@@ -73,6 +75,7 @@ test('Windows launcher separates immutable versions from persistent data and has
 test('Windows build recipe embeds Node and dependency but never packages data directory',()=>{
   const build=readFileSync(new URL('../BUILD-WINDOWS-PACKAGE.ps1',import.meta.url),'utf8');
   assert.match(build,/runtime\\node\.exe/);assert.match(build,/node_modules\\ts-fsrs/);assert.match(build,/Compress-Archive/);
+  assert.match(build,/CONFIGURAR-VOZ-OFFLINE\.ps1/);assert.match(build,/CONFIGURAR-GRAMATICA-LOCAL\.ps1/);
   assert.match(build,/\.sha256/);assert.equal(/Copy-Item[^\n]+['"]data['"]/i.test(build),false);
 });
 
