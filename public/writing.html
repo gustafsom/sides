@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>SIDES · Escrita inteligente</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/writing.css">
+</head>
+<body>
+<header class="topbar">
+  <div><strong>SIDES</strong><span>Escrita inteligente · gramática em produção real</span></div>
+  <a class="headerLink" href="/">Painel principal</a>
+</header>
+<main>
+  <section class="hero writingHero">
+    <div><span class="eyebrow">Bloco 8</span><h1>Escreva, revise e transforme seus erros em treino.</h1>
+      <p>Produza em espanhol, receba sugestões locais, reescreva e acompanhe quais padrões realmente estão melhorando.</p>
+    </div>
+    <div id="runtimeBadge" class="runtimeBadge">Verificando corretor…</div>
+  </section>
+
+  <section id="writingStats" class="stats"></section>
+
+  <div class="grid two writingGrid">
+    <section class="card promptCard">
+      <div class="sectionTitle"><div><span class="eyebrow">Tema adaptativo</span><h2 id="promptTitle">Carregando…</h2></div><button id="newPrompt" class="ghost">Outro tema</button></div>
+      <p id="promptText" class="promptText"></p>
+      <div id="promptMeta" class="promptMeta"></div>
+      <button id="freeMode" class="ghost">Usar texto livre</button>
+    </section>
+
+    <section class="card">
+      <div class="sectionTitle"><div><span class="eyebrow">Foco atual</span><h2>Padrões que merecem atenção</h2></div></div>
+      <div id="weakWriting"></div>
+    </section>
+  </div>
+
+  <section class="card editorCard">
+    <div class="sectionTitle"><div><span class="eyebrow">Produção</span><h2 id="editorTitle">Seu texto em espanhol</h2></div><span id="wordCounter" class="trendBadge neutral">0 palavras</span></div>
+    <textarea id="writingText" maxlength="8000" spellcheck="false" placeholder="Escreva aqui. O texto é enviado somente ao servidor local do SIDES; quando o LanguageTool estiver habilitado, ele também roda apenas em localhost."></textarea>
+    <div class="editorActions">
+      <button id="checkBtn">Analisar sem salvar</button>
+      <button id="submitBtn">Registrar tentativa</button>
+      <span id="revisionNote" class="sub"></span>
+    </div>
+  </section>
+
+  <section id="resultCard" class="card hidden">
+    <div class="sectionTitle"><div><span class="eyebrow">Revisão</span><h2 id="resultTitle">Resultado</h2></div><span id="reviewIndex" class="trendBadge"></span></div>
+    <div id="resultSummary" class="writingSummary"></div>
+    <div id="issues" class="issueList"></div>
+    <div id="revisionActions" class="editorActions hidden"><button id="reviseBtn">Reescrever e comparar</button></div>
+    <p class="footerNote">As sugestões são apoio à revisão. O SIDES e o LanguageTool podem produzir falso positivo; considere sempre o contexto.</p>
+  </section>
+
+  <div class="grid two writingGrid">
+    <section class="card"><h2>Padrões recentes</h2><div id="categoryHistory"></div></section>
+    <section class="card"><h2>Últimas tentativas</h2><div id="recentWriting"></div></section>
+  </div>
+
+  <section class="card legalNote"><h2>Privacidade da escrita</h2>
+    <p>O banco do SIDES não armazena o texto escrito nem a versão corrigida. São guardadas apenas métricas, categorias de revisão e o vínculo entre uma tentativa e sua reescrita. O LanguageTool, quando configurado, é aceito somente em endereço de loopback; URLs remotas são bloqueadas pelo backend.</p>
+  </section>
+</main>
+<script type="module" src="/writing.js"></script>
+</body>
+</html>
