@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openDatabase } from './db.mjs';
-import { checkVocabulary, completeSpeaking, curriculumStatus, dashboard, dailySession, errorNotebook, exportData, getVocabularyCard, nextLearningItem, placementItems, progressDashboard, randomGrammar, randomListening, randomReading, submitGrammar, submitLearningItem, submitListening, submitPlacement, submitReading, submitVocabulary, updatePreferences } from './service.mjs';
+import { checkVocabulary, completeSpeaking, curriculumStatus, dashboard, dailySession, errorNotebook, getVocabularyCard, nextLearningItem, placementItems, progressDashboard, randomGrammar, randomListening, randomReading, submitGrammar, submitLearningItem, submitListening, submitPlacement, submitReading, submitVocabulary, updatePreferences } from './service.mjs';
 import { completeJwSpeaking, jwOverview, jwSessionPlan, nextBibleBook, nextJwVocabulary, submitBibleBook, submitJwVocabulary } from './jw-service.mjs';
 import { assignmentOverview, createAssignment, getAssignment, listAssignments, recordAssignmentPractice, updateAssignment } from './assignments.mjs';
 import { analyzeSpeech, nextSpeechTarget, speechOverview } from './speech-service.mjs';
@@ -13,6 +13,7 @@ import { checkWriting, nextWritingPrompt, submitWriting, writingOverview, writin
 import { abandonImmersion, getImmersionSession, immersionOverview, immersionPlan, respondImmersion, startImmersion } from './immersion-service.mjs';
 import { plannerOverview, studyGoals, updateStudyGoals } from './planner.mjs';
 import { effectiveXpReport } from './xp-economy.mjs';
+import { createDatabaseBackup, ensureAutomaticBackup, exportFullData, importJsonBackup, integrityStatus, readLocalBackup, runIntegrityCheck, stageRestoreBuffer, stageRestoreFromBackup, startAutomaticBackupScheduler } from './integrity.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('../', import.meta.url)));
 const PUBLIC = join(ROOT,'public');
@@ -30,8 +31,10 @@ function json(res,status,data) {
   res.writeHead(status,{...securityHeaders,'Content-Type':'application/json; charset=utf-8'});
   res.end(JSON.stringify(data));
 }
-function binary(res,status,data,type='application/octet-stream'){
-  res.writeHead(status,{...securityHeaders,'Content-Type':type,'Content-Length':data.length});res.end(data);
+function binary(res,status,data,type='application/octet-stream',filename=null){
+  const headers={...securityHeaders,'Content-Type':type,'Content-Length':data.length};
+  if(filename)headers['Content-Disposition']=`attachment; filename="${filename}"`;
+  res.writeHead(status,headers);res.end(data);
 }
 
 async function rawBody(req,max=1_000_000) {
@@ -56,21 +59,11 @@ async function staticFile(req,res) {
   } catch { return false; }
 }
 
-function extendedExport(db) {
-  const data=exportData(db);
-  data.schemaVersion='SIDES-EXPORT-V8';
-  for(const table of ['jw_assignments','jw_assignment_practices','speech_attempts','writing_attempts','writing_issue_summary','immersion_sessions','immersion_turn_metrics','study_goals']){
-    const exists=db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(table);
-    if(exists)data.tables[table]=db.prepare(`SELECT * FROM ${table}`).all();
-  }
-  return data;
-}
-
 export function createSidesServer({db=openDatabase(), now=()=>new Date(), writingDeps={}}={}) {
   return createServer(async (req,res)=>{
     try {
       const url = new URL(req.url,'http://localhost');
-      if (url.pathname === '/api/health' && req.method==='GET') return json(res,200,{ok:true,app:'SIDES',schema:'SIDES-API-V8',time:now().toISOString()});
+      if (url.pathname === '/api/health' && req.method==='GET') return json(res,200,{ok:true,app:'SIDES',schema:'SIDES-API-V9',time:now().toISOString()});
       if (url.pathname === '/api/dashboard' && req.method==='GET') return json(res,200,dashboard(db,now()));
       if (url.pathname === '/api/progress' && req.method==='GET') return json(res,200,progressDashboard(db,now(),Number(url.searchParams.get('days')||30)));
       if (url.pathname === '/api/curriculum' && req.method==='GET') return json(res,200,curriculumStatus(db));
@@ -78,6 +71,23 @@ export function createSidesServer({db=openDatabase(), now=()=>new Date(), writin
       if (url.pathname === '/api/planner/goals' && req.method==='GET') return json(res,200,studyGoals(db));
       if (url.pathname === '/api/planner/goals' && req.method==='POST') return json(res,200,updateStudyGoals(db,await body(req),now()));
       if (url.pathname === '/api/rewards' && req.method==='GET') return json(res,200,effectiveXpReport(db,now()));
+
+      if (url.pathname === '/api/integrity/status' && req.method==='GET') return json(res,200,integrityStatus(db,now()));
+      if (url.pathname === '/api/integrity/check' && req.method==='POST') return json(res,200,runIntegrityCheck(db,now()));
+      if (url.pathname === '/api/integrity/backup' && req.method==='POST') return json(res,201,await createDatabaseBackup(db,{kind:'manual',now:now()}));
+      if (url.pathname === '/api/integrity/import' && req.method==='POST') return json(res,200,await importJsonBackup(db,await body(req,50_000_000),{now:now()}));
+      if (url.pathname === '/api/integrity/restore' && req.method==='POST') {
+        const type=String(req.headers['content-type']||'').toLowerCase();
+        if(!type.startsWith('application/x-sqlite3')&&!type.startsWith('application/vnd.sqlite3')&&!type.startsWith('application/octet-stream'))throw new Error('RESTORE_SQLITE_CONTENT_TYPE_REQUIRED');
+        return json(res,202,await stageRestoreBuffer(db,await rawBody(req,100_000_000),{now:now()}));
+      }
+      if (url.pathname === '/api/integrity/restore-local' && req.method==='POST') return json(res,202,await stageRestoreFromBackup(db,(await body(req)).filename,{now:now()}));
+      const backupDownload=url.pathname.match(/^\/api\/integrity\/backups\/([^/]+)$/);
+      if(backupDownload&&req.method==='GET'){
+        const local=readLocalBackup(db,decodeURIComponent(backupDownload[1]));
+        return binary(res,200,local.buffer,'application/x-sqlite3',local.filename);
+      }
+
       if (url.pathname === '/api/vocabulary/next' && req.method==='GET') return json(res,200,{item:getVocabularyCard(db,now())});
       if (url.pathname === '/api/vocabulary/check' && req.method==='POST') return json(res,200,checkVocabulary(db,await body(req)));
       if (url.pathname === '/api/vocabulary/review' && req.method==='POST') return json(res,200,submitVocabulary(db,await body(req),now()));
@@ -140,8 +150,8 @@ export function createSidesServer({db=openDatabase(), now=()=>new Date(), writin
       if (immersionMatch && req.method==='GET') return json(res,200,getImmersionSession(db,Number(immersionMatch[1])));
 
       if (url.pathname === '/api/export' && req.method==='GET') {
-        const data=extendedExport(db);
-        res.writeHead(200,{...securityHeaders,'Content-Type':'application/json; charset=utf-8','Content-Disposition':`attachment; filename="SIDES-backup-${new Date().toISOString().slice(0,10)}.json"`});
+        const data=exportFullData(db,now());
+        res.writeHead(200,{...securityHeaders,'Content-Type':'application/json; charset=utf-8','Content-Disposition':`attachment; filename="SIDES-backup-${now().toISOString().slice(0,10)}.json"`});
         return res.end(JSON.stringify(data,null,2));
       }
       if (url.pathname.startsWith('/api/')) return json(res,404,{error:'NOT_FOUND'});
@@ -155,12 +165,17 @@ export function createSidesServer({db=openDatabase(), now=()=>new Date(), writin
   });
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+async function startLocalApp(){
   const db=openDatabase();
+  try{await ensureAutomaticBackup(db,new Date());}catch(error){console.error(`Backup automático não concluído: ${error?.message||error}`);}
+  const stopBackupScheduler=startAutomaticBackupScheduler(db);
   const server=createSidesServer({db});
   const port=Number(process.env.SIDES_PORT||4317);
+  server.on('close',()=>{stopBackupScheduler();try{db.close();}catch{}});
   server.listen(port,'127.0.0.1',()=>{
     console.log(`SIDES disponível em http://127.0.0.1:${port}`);
-    console.log('Dados locais: data/sides.sqlite | Telemetria: desativada | Rede: loopback-only');
+    console.log('Dados locais: data/sides.sqlite | Backup: automático e rotativo | Telemetria: desativada | Rede: loopback-only');
   });
 }
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await startLocalApp();
