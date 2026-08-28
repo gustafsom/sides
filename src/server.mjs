@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openDatabase } from './db.mjs';
-import { checkVocabulary, completeSpeaking, dashboard, dailySession, exportData, getVocabularyCard, placementItems, randomGrammar, randomListening, randomReading, submitGrammar, submitListening, submitPlacement, submitReading, submitVocabulary } from './service.mjs';
+import { checkVocabulary, completeSpeaking, dashboard, dailySession, errorNotebook, exportData, getVocabularyCard, placementItems, randomGrammar, randomListening, randomReading, submitGrammar, submitListening, submitPlacement, submitReading, submitVocabulary, updatePreferences } from './service.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('../', import.meta.url)));
 const PUBLIC = join(ROOT,'public');
@@ -65,6 +65,8 @@ export function createSidesServer({db=openDatabase(), now=()=>new Date()}={}) {
       if (url.pathname === '/api/placement' && req.method==='POST') return json(res,200,submitPlacement(db,await body(req),now()));
       if (url.pathname === '/api/speaking/complete' && req.method==='POST') return json(res,200,completeSpeaking(db,await body(req),now()));
       if (url.pathname === '/api/session' && req.method==='GET') return json(res,200,{items:dailySession(db,Math.min(50,Math.max(5,Number(url.searchParams.get('limit')||20))))});
+      if (url.pathname === '/api/errors' && req.method==='GET') return json(res,200,{items:errorNotebook(db,Number(url.searchParams.get('limit')||30))});
+      if (url.pathname === '/api/preferences' && req.method==='POST') return json(res,200,updatePreferences(db,await body(req)));
       if (url.pathname === '/api/export' && req.method==='GET') {
         const data=exportData(db);
         res.writeHead(200,{...securityHeaders,'Content-Type':'application/json; charset=utf-8','Content-Disposition':`attachment; filename="SIDES-backup-${new Date().toISOString().slice(0,10)}.json"`});
