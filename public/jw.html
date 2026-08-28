@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>SIDES · Trilha JW</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/jw.css">
+</head>
+<body>
+<header class="topbar">
+  <div><strong>SIDES</strong><span>Trilha JW · espanhol para congregação, Bíblia e discursos</span></div>
+  <a class="headerLink" href="/">Painel principal</a>
+</header>
+<main>
+  <section class="hero jwHero">
+    <div><span class="eyebrow">Trilha especializada</span><h1>Espanhol para sua vida na congregação.</h1><p>Treine vocabulário, livros da Bíblia, leitura pública, comentários e discursos. O conteúdo oficial continua no JW.org/JW Library; o SIDES registra apenas o seu treino.</p></div>
+    <button id="sessionBtn">Sessão JW</button>
+  </section>
+
+  <section id="summary" class="stats"></section>
+
+  <div class="grid two jwGrid">
+    <section class="card"><h2>Vocabulário JW</h2><p class="sub">Palavras e expressões de alta utilidade com exemplos originais.</p><button id="vocabBtn">Treinar palavras</button></section>
+    <section class="card"><h2>Livros da Bíblia</h2><p class="sub">Português → espanhol, abreviação → nome e nome → abreviação.</p><button id="booksBtn">Treinar livros</button></section>
+    <section class="card"><h2>Leitura pública</h2><p class="sub">Abra a Bíblia oficial, leia em voz alta, grave e avalie sua execução.</p><button data-speaking="reading">Treinar leitura</button></section>
+    <section class="card"><h2>Comentários</h2><p class="sub">Pratique respostas curtas de 30–60 segundos com naturalidade e clareza.</p><button data-speaking="comment">Treinar comentário</button></section>
+    <section class="card"><h2>Discursos</h2><p class="sub">Pratique trechos de 2–3 minutos e acompanhe sua evolução por rubrica.</p><button data-speaking="talk">Treinar discurso</button></section>
+    <section class="card"><h2>Recursos oficiais</h2><div id="resources" class="resourceList"></div></section>
+  </div>
+
+  <section class="card"><h2>Foco de aprendizagem</h2><div id="weakest"></div></section>
+
+  <section id="practice" class="practice card hidden"></section>
+
+  <section class="card legalNote"><h2>Limite de conteúdo</h2><p>O SIDES não copia, extrai, armazena nem redistribui versículos, artigos, publicações, imagens, vídeos ou áudios do JW.org. Para treinos baseados em uma publicação, use o recurso oficial em outra aba ou no JW Library.</p></section>
+</main>
+<script type="module" src="/jw.js"></script>
+</body>
+</html>

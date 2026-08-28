@@ -4,7 +4,7 @@
 
 ## Estado
 
-MVP `0.2.0` — roda somente em `127.0.0.1`, sem telemetria e sem APIs pagas.
+MVP `0.3.0` — roda somente em `127.0.0.1`, sem telemetria e sem APIs pagas.
 
 ## Iniciar
 
@@ -26,7 +26,7 @@ Abra `http://127.0.0.1:4317`.
 
 - Node.js 22.13+ (o ambiente-alvo usa Node 24);
 - navegador moderno;
-- microfone apenas para gravação de shadowing.
+- microfone apenas para gravação de shadowing/leitura/discurso.
 
 Não há dependências npm obrigatórias no MVP.
 
@@ -43,10 +43,34 @@ Não há dependências npm obrigatórias no MVP.
 - sessão diária intercalando habilidades e priorizando pontos fracos;
 - mapa de domínio por habilidade e caderno de erros aberto até recuperação correta;
 - variante de espanhol configurável (internacional, Espanha, México e Argentina);
+- Trilha JW para vocabulário congregacional/bíblico, livros e abreviações da Bíblia, leitura pública, comentários e discursos;
+- links para recursos oficiais do JW.org, sem copiar o conteúdo para o SIDES;
 - backup JSON do progresso;
 - persistência SQLite local;
 - binding exclusivo a `127.0.0.1`;
 - CSP e headers de segurança; sem CDN, analytics ou recursos externos.
+
+## Trilha JW
+
+A rota local `/jw.html` adiciona uma trilha especializada para quem precisa usar espanhol em uma congregação.
+
+Ela inclui:
+
+- 50 termos de alta utilidade para Bíblia, reuniões, congregação, ministério, leitura e discursos, com exemplos originais do SIDES;
+- treino dos 66 livros da Bíblia: português → espanhol, abreviação → nome e nome → abreviação;
+- leitura pública com gravação temporária no navegador e autoavaliação por rubricas;
+- comentários de 30–60 segundos;
+- trechos de discurso de 2–3 minutos;
+- rubricas de exatidão, naturalidade, ritmo, modulação, ênfase, introdução/explicação de textos, simplicidade, convicção, pontos principais e conclusão;
+- priorização adaptativa dos itens e rubricas mais fracos.
+
+### Limite de conteúdo JW.org
+
+O SIDES **não raspa, copia, armazena, redistribui nem incorpora** versículos, artigos, publicações, imagens, vídeos ou áudios do JW.org. Os termos de uso do site permitem visualizar/baixar conteúdo para uso pessoal, mas restringem sua reprodução em outros aplicativos.
+
+Por isso, quando um treino depender de uma leitura ou publicação, o SIDES abre o recurso oficial em outra aba e registra somente seu progresso. A gravação de treino permanece na memória da aba e não é persistida automaticamente.
+
+Detalhes: `docs/JW-TRACK.md`.
 
 ## Pedagogia aplicada
 

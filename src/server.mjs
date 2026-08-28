@@ -4,6 +4,7 @@ import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openDatabase } from './db.mjs';
 import { checkVocabulary, completeSpeaking, dashboard, dailySession, errorNotebook, exportData, getVocabularyCard, placementItems, randomGrammar, randomListening, randomReading, submitGrammar, submitListening, submitPlacement, submitReading, submitVocabulary, updatePreferences } from './service.mjs';
+import { completeJwSpeaking, jwOverview, jwSessionPlan, nextBibleBook, nextJwVocabulary, submitBibleBook, submitJwVocabulary } from './jw-service.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('../', import.meta.url)));
 const PUBLIC = join(ROOT,'public');
@@ -67,6 +68,13 @@ export function createSidesServer({db=openDatabase(), now=()=>new Date()}={}) {
       if (url.pathname === '/api/session' && req.method==='GET') return json(res,200,{items:dailySession(db,Math.min(50,Math.max(5,Number(url.searchParams.get('limit')||20))))});
       if (url.pathname === '/api/errors' && req.method==='GET') return json(res,200,{items:errorNotebook(db,Number(url.searchParams.get('limit')||30))});
       if (url.pathname === '/api/preferences' && req.method==='POST') return json(res,200,updatePreferences(db,await body(req)));
+      if (url.pathname === '/api/jw/overview' && req.method==='GET') return json(res,200,jwOverview(db));
+      if (url.pathname === '/api/jw/session' && req.method==='GET') return json(res,200,{items:jwSessionPlan()});
+      if (url.pathname === '/api/jw/vocabulary/next' && req.method==='GET') return json(res,200,{item:nextJwVocabulary(db)});
+      if (url.pathname === '/api/jw/vocabulary/answer' && req.method==='POST') return json(res,200,submitJwVocabulary(db,await body(req),now()));
+      if (url.pathname === '/api/jw/bible-book/next' && req.method==='GET') return json(res,200,{item:nextBibleBook(db)});
+      if (url.pathname === '/api/jw/bible-book/answer' && req.method==='POST') return json(res,200,submitBibleBook(db,await body(req),now()));
+      if (url.pathname === '/api/jw/speaking/complete' && req.method==='POST') return json(res,200,completeJwSpeaking(db,await body(req),now()));
       if (url.pathname === '/api/export' && req.method==='GET') {
         const data=exportData(db);
         res.writeHead(200,{...securityHeaders,'Content-Type':'application/json; charset=utf-8','Content-Disposition':`attachment; filename="SIDES-backup-${new Date().toISOString().slice(0,10)}.json"`});
