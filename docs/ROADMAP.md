@@ -110,12 +110,25 @@ Os blocos têm entrega funcional independente. A linha de chegada definida é o 
 - instalador opcional do LanguageTool 6.6 com checksum verificado e Java 17+;
 - migração aditiva para `SIDES-DB-V7`.
 
-## Bloco 9 — Imersão e conversação prática
+## Bloco 9 — Imersão e conversação prática ✅
 
-- cenários cotidianos, viagem e congregação;
-- diálogos ramificados;
-- histórias graduadas;
-- sessões predominantemente em espanhol.
+- área **Imersão** em `/immersion.html`;
+- 32 cenários ramificados originais, 8 por nível A1, A2, B1 e B2;
+- 16 histórias graduadas originais, 4 por nível;
+- cotidiano, viagem, alimentação, compras, trabalho, saúde, opinião e congregação;
+- resposta livre por texto ou resposta oral via Whisper local;
+- alternativas guiadas apenas como apoio;
+- objetivo comunicativo por turno e ramificação por intenção;
+- reparo explícito quando a intenção não é reconhecida, sem simular compreensão;
+- revisão transitória do Bloco 8 aplicada às respostas do turno;
+- plano imersivo de diálogo + história com cerca de 18 minutos;
+- meta de pelo menos 85% da produção em espanhol;
+- seleção adaptativa por nível, tema, conteúdo recente e habilidades fracas;
+- desconto de XP ao repetir o mesmo conteúdo em até 7 dias;
+- métricas de conversação integradas a `reviews`, `activity`, `skill_mastery`, `skill_events` e índice de atenção;
+- respostas, transcrições e áudio não são persistidos;
+- backup contém apenas estado e métricas de imersão;
+- migração aditiva para `SIDES-DB-V8`.
 
 ## Bloco 10 — Planejador diário e gamificação madura
 
