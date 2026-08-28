@@ -10,6 +10,7 @@ import { analyzeSpeech, nextSpeechTarget, speechOverview } from './speech-servic
 import { speechRuntimeStatus, transcribeWhisper } from './speech-runtime.mjs';
 import { piperStatus, synthesizePiper } from './tts-runtime.mjs';
 import { checkWriting, nextWritingPrompt, submitWriting, writingOverview, writingStatus } from './writing-service.mjs';
+import { abandonImmersion, getImmersionSession, immersionOverview, immersionPlan, respondImmersion, startImmersion } from './immersion-service.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('../', import.meta.url)));
 const PUBLIC = join(ROOT,'public');
@@ -55,8 +56,8 @@ async function staticFile(req,res) {
 
 function extendedExport(db) {
   const data=exportData(db);
-  data.schemaVersion='SIDES-EXPORT-V6';
-  for(const table of ['jw_assignments','jw_assignment_practices','speech_attempts','writing_attempts','writing_issue_summary']){
+  data.schemaVersion='SIDES-EXPORT-V7';
+  for(const table of ['jw_assignments','jw_assignment_practices','speech_attempts','writing_attempts','writing_issue_summary','immersion_sessions','immersion_turn_metrics']){
     const exists=db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(table);
     if(exists)data.tables[table]=db.prepare(`SELECT * FROM ${table}`).all();
   }
@@ -67,7 +68,7 @@ export function createSidesServer({db=openDatabase(), now=()=>new Date(), writin
   return createServer(async (req,res)=>{
     try {
       const url = new URL(req.url,'http://localhost');
-      if (url.pathname === '/api/health' && req.method==='GET') return json(res,200,{ok:true,app:'SIDES',schema:'SIDES-API-V6',time:now().toISOString()});
+      if (url.pathname === '/api/health' && req.method==='GET') return json(res,200,{ok:true,app:'SIDES',schema:'SIDES-API-V7',time:now().toISOString()});
       if (url.pathname === '/api/dashboard' && req.method==='GET') return json(res,200,dashboard(db,now()));
       if (url.pathname === '/api/progress' && req.method==='GET') return json(res,200,progressDashboard(db,now(),Number(url.searchParams.get('days')||30)));
       if (url.pathname === '/api/curriculum' && req.method==='GET') return json(res,200,curriculumStatus(db));
@@ -122,6 +123,16 @@ export function createSidesServer({db=openDatabase(), now=()=>new Date(), writin
       if (url.pathname === '/api/writing/check' && req.method==='POST') return json(res,200,await checkWriting((await body(req)).text,writingDeps));
       if (url.pathname === '/api/writing/submit' && req.method==='POST') return json(res,201,await submitWriting(db,await body(req),now(),writingDeps));
 
+      if (url.pathname === '/api/immersion/overview' && req.method==='GET') return json(res,200,immersionOverview(db,Number(url.searchParams.get('days')||30),now()));
+      if (url.pathname === '/api/immersion/plan' && req.method==='GET') return json(res,200,immersionPlan(db,now()));
+      if (url.pathname === '/api/immersion/start' && req.method==='POST') return json(res,201,startImmersion(db,await body(req),now()));
+      const immersionRespond=url.pathname.match(/^\/api\/immersion\/(\d+)\/respond$/);
+      if (immersionRespond && req.method==='POST') return json(res,200,await respondImmersion(db,Number(immersionRespond[1]),await body(req),now(),writingDeps));
+      const immersionAbandon=url.pathname.match(/^\/api\/immersion\/(\d+)\/abandon$/);
+      if (immersionAbandon && req.method==='POST') return json(res,200,abandonImmersion(db,Number(immersionAbandon[1]),now()));
+      const immersionMatch=url.pathname.match(/^\/api\/immersion\/(\d+)$/);
+      if (immersionMatch && req.method==='GET') return json(res,200,getImmersionSession(db,Number(immersionMatch[1])));
+
       if (url.pathname === '/api/export' && req.method==='GET') {
         const data=extendedExport(db);
         res.writeHead(200,{...securityHeaders,'Content-Type':'application/json; charset=utf-8','Content-Disposition':`attachment; filename="SIDES-backup-${new Date().toISOString().slice(0,10)}.json"`});
@@ -132,7 +143,7 @@ export function createSidesServer({db=openDatabase(), now=()=>new Date(), writin
       json(res,404,{error:'NOT_FOUND'});
     } catch (error) {
       const message = error?.message || 'INTERNAL_ERROR';
-      const status = message === 'PAYLOAD_TOO_LARGE'||message==='WAV_TOO_LARGE' ? 413 : message.includes('NOT_FOUND') ? 404 : message==='WHISPER_BUSY' ? 409 : message.includes('NOT_CONFIGURED') ? 503 : 400;
+      const status = message === 'PAYLOAD_TOO_LARGE'||message==='WAV_TOO_LARGE' ? 413 : message.includes('NOT_FOUND') ? 404 : message==='WHISPER_BUSY'||message==='IMMERSION_SESSION_NOT_ACTIVE' ? 409 : message.includes('NOT_CONFIGURED') ? 503 : 400;
       json(res,status,{error:message});
     }
   });

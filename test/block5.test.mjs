@@ -7,7 +7,7 @@ import { ensureCurriculum, prerequisiteReadiness } from '../src/curriculum.mjs';
 
 test('expanded pack more than doubles generated A1-B2 curriculum and reaches doubled real targets',()=>{
   const db=openDatabase(':memory:');
-  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V7');
+  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V8');
   assert.equal(db.prepare("SELECT value FROM meta WHERE key='curriculumPackVersion'").get().value,CURRICULUM_PACK);
   assert.equal(CURRICULUM_PACK,'SIDES-CURRICULUM-B5-V2');
   assert.deepEqual(block5Counts,{vocabulary:1480,learning:640,grammar:320,listening:200,reading:104});
@@ -55,7 +55,7 @@ test('expanded curriculum seeding remains idempotent and does not downgrade glob
     meta:Number(db.prepare('SELECT COUNT(*) n FROM curriculum_meta').get().n)
   };
   assert.deepEqual(after,before);
-  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V7');
+  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V8');
 });
 
 test('prerequisite readiness remains a soft signal that grows with demonstrated mastery',()=>{

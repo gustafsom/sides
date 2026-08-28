@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>SIDES · Imersão</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/immersion.css">
+</head>
+<body>
+<header class="topbar">
+  <div><strong>SIDES</strong><span>Imersão · conversação prática</span></div>
+  <div class="topLinks"><a class="headerLink" href="/speech.html">Fala offline</a><a class="headerLink" href="/writing.html">Escrita</a><a class="headerLink" href="/">Painel</a></div>
+</header>
+<main>
+  <section class="hero immersionHero">
+    <div><span class="eyebrow">Bloco 9</span><h1>Pense menos em traduzir. Responda em espanhol.</h1>
+      <p>Diálogos ramificados, histórias graduadas e resposta livre por texto ou voz. O objetivo é manter a sessão predominantemente em espanhol e treinar intenção comunicativa, não decorar uma frase única.</p>
+    </div>
+    <button id="planBtn">Sessão imersiva 15–20 min</button>
+  </section>
+
+  <section id="stats" class="stats"></section>
+
+  <div class="grid two">
+    <section class="card">
+      <h2>Conversação ramificada</h2>
+      <p class="sub">O parceiro reage ao objetivo da sua resposta. Se o SIDES não reconhecer a intenção, ele pede reformulação sem fingir que entendeu.</p>
+      <div class="topicRow"><select id="topic"><option value="">Adaptativo</option><option value="daily">Cotidiano</option><option value="travel">Viagem</option><option value="food">Restaurante/alimentação</option><option value="work">Trabalho</option><option value="health">Saúde</option><option value="media">Opinião/mídia</option><option value="congregation">Congregação</option></select><button id="scenarioBtn">Iniciar diálogo</button></div>
+    </section>
+    <section class="card">
+      <h2>Histórias graduadas</h2>
+      <p class="sub">Leia em espanhol, recupere as ideias sem traduzir linha por linha e responda às perguntas com suas próprias palavras.</p>
+      <button id="storyBtn">Iniciar história</button>
+    </section>
+  </div>
+
+  <section class="card privacyStrip">
+    <div><strong>Privacidade por desenho</strong><p class="sub">Resposta e transcrição existem apenas durante o turno. O histórico guarda métricas, não o que você escreveu ou falou.</p></div>
+    <span id="voiceStatus" class="trendBadge neutral">Whisper: verificando…</span>
+  </section>
+
+  <section id="sessionCard" class="card hidden">
+    <div class="sectionTitle"><div><span id="sessionMeta" class="eyebrow"></span><h2 id="sessionTitle"></h2></div><button id="abandonBtn" class="ghost">Encerrar</button></div>
+    <div id="storyText" class="storyText hidden"></div>
+    <div id="chat" class="chat"></div>
+    <div id="objective" class="objective"></div>
+    <details id="helpBox"><summary>Preciso de uma pista</summary><div id="help"></div></details>
+    <textarea id="response" rows="3" maxlength="1200" placeholder="Responda em espanhol sem traduzir palavra por palavra."></textarea>
+    <div class="responseActions"><button id="sendBtn">Responder</button><button id="recordBtn" class="ghost">🎙️ Responder falando</button><button id="stopBtn" class="ghost" disabled>■ Parar</button><span id="timer">00:00</span></div>
+    <div id="guided" class="guided"></div>
+    <div id="turnFeedback"></div>
+  </section>
+
+  <section id="completeCard" class="card hidden"></section>
+
+  <div class="grid two">
+    <section class="card"><h2>Evolução por contexto</h2><div id="topics"></div></section>
+    <section class="card"><h2>Últimas sessões</h2><div id="history"></div></section>
+  </div>
+</main>
+<script type="module" src="/immersion.js"></script>
+</body>
+</html>

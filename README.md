@@ -1,12 +1,12 @@
 # SIDES
 
-**Sistema de Imersão e Desenvolvimento em Espanhol** — aplicação local-first para estudar espanhol com prática ativa, repetição espaçada, feedback explicativo, interleaving, fala, escrita e gamificação.
+**Sistema de Imersão e Desenvolvimento em Espanhol** — aplicação local-first para estudar espanhol com prática ativa, repetição espaçada, feedback explicativo, interleaving, fala, escrita, imersão e gamificação.
 
 ## Estado
 
-MVP evolutivo `0.8.0` — roda somente em `127.0.0.1`, sem telemetria e sem APIs pagas obrigatórias.
+MVP evolutivo `0.9.0` — roda somente em `127.0.0.1`, sem telemetria e sem APIs pagas obrigatórias.
 
-A versão 0.8.0 preserva currículo A1–B2 expandido, designações e fala offline e adiciona o **Bloco 8 — gramática e escrita inteligente**, com produção livre/guiada, reescrita adaptativa, corretor SIDES sempre disponível e LanguageTool local opcional.
+A versão 0.9.0 preserva currículo A1–B2 expandido, designações, fala offline e escrita inteligente e adiciona o **Bloco 9 — imersão e conversação prática**, com diálogos ramificados, histórias graduadas e respostas por texto ou voz.
 
 ## Iniciar
 
@@ -25,14 +25,14 @@ Componentes opcionais:
 .\CONFIGURAR-GRAMATICA-LOCAL.ps1
 ```
 
-Whisper e LanguageTool não são necessários para abrir o SIDES. Sem eles, fala continua com comparação manual e escrita continua com as regras locais do SIDES.
+Whisper e LanguageTool não são necessários para abrir o SIDES. Sem eles, fala continua com comparação manual, escrita mantém as regras locais do SIDES e Imersão continua funcionando por texto.
 
 ## Requisitos
 
 - Node.js 22.13+ (ambiente-alvo Node 24);
 - npm na primeira preparação do código-fonte;
 - navegador moderno;
-- microfone apenas para treinos de fala;
+- microfone apenas para treinos de fala/conversação oral;
 - `whisper.cpp` somente se desejar transcrição automática local;
 - Java 17+ somente se desejar LanguageTool local.
 
@@ -66,57 +66,90 @@ Detalhes: `docs/OFFLINE-SPEECH.md`.
 
 ## Gramática e escrita inteligente — Bloco 8
 
-A rota `/writing.html` implementa um ciclo de produção deliberada:
+A rota `/writing.html` implementa produção guiada/livre e reescrita deliberada. O banco inicial possui **32 propostas originais**, 8 por nível A1/A2/B1/B2.
 
-1. escolher tema adaptativo ou texto livre;
-2. escrever em espanhol;
-3. analisar sem salvar ou registrar a tentativa;
-4. revisar alertas e explicações;
-5. reescrever;
-6. recuperar os padrões que deixaram de aparecer.
+A revisão combina regras locais SIDES com LanguageTool local opcional. O backend aceita LanguageTool somente em loopback; URLs remotas são bloqueadas antes da chamada. Padrões como concordância, verbos, preposições, ser/estar, por/para, ortografia, acentuação, pontuação, registro e estilo alimentam o motor adaptativo.
 
-O banco inicial possui **32 propostas originais**, 8 por nível A1/A2/B1/B2. Os contextos cobrem rotina, mensagens, viagem, trabalho, opinião, congregação e preparação de fala/discurso.
+`writing_attempts` e `writing_issue_summary` armazenam somente métricas, categorias e vínculo de revisão. Texto escrito/corrigido não é persistido. **Analisar sem salvar** não cria tentativa no banco.
 
-A revisão combina:
+Detalhes: `docs/WRITING.md`.
 
-- regras locais SIDES, sempre disponíveis;
-- LanguageTool local opcional;
-- classificação pedagógica em padrões como concordância, verbos, preposições, pronomes, ser/estar, por/para, ortografia, acentuação, pontuação, registro e estilo;
-- explicação e uma ação concreta para cada tipo de dificuldade;
-- integração com `skill_mastery`, `skill_events`, caderno de erros e índice de atenção.
+## Imersão e conversação prática — Bloco 9
 
-Antes do diagnóstico, o treino de escrita permanece em A1.
+A rota `/immersion.html` transforma o currículo em situações de uso real.
 
-### Reescrita e recuperação
+O pacote inicial possui:
 
-Ao registrar uma reescrita, ela pode ser vinculada à tentativa anterior. Se uma categoria que estava presente deixa de aparecer, o SIDES registra a recuperação daquele padrão e atualiza o domínio adaptativo. Assim o sistema não recompensa apenas “ver correções”; ele mede a capacidade de produzir uma nova versão melhor.
+- **32 cenários ramificados originais**, 8 por nível A1/A2/B1/B2;
+- **16 histórias graduadas originais**, 4 por nível;
+- contextos de cotidiano, viagem, alimentação, compras, trabalho, saúde, opinião/mídia e congregação.
 
-### LanguageTool local
+### Conversação ramificada
 
-O configurador opcional:
+Cada turno apresenta um objetivo comunicativo. Você pode responder livremente em espanhol ou usar uma alternativa guiada como apoio. O motor identifica a intenção pela linguagem produzida e avança pelo ramo correspondente.
 
-```powershell
-.\CONFIGURAR-GRAMATICA-LOCAL.ps1
-```
+Se a intenção não for reconhecida, o SIDES **não finge que entendeu**: mantém o turno, explica o objetivo e oferece modelos de reformulação.
 
-prepara LanguageTool 6.6 com checksum verificado. Java 17+ é necessário somente para esse componente.
+A resposta pode ser:
 
-O backend aceita LanguageTool **somente em endereço de loopback**. URLs públicas/remotas são bloqueadas antes de qualquer chamada. O SIDES não envia textos para `api.languagetool.org`.
+- digitada;
+- guiada por uma opção;
+- falada, quando Whisper local estiver disponível.
 
-### Privacidade da escrita
+Na resposta oral, o navegador converte a gravação para WAV local, Whisper gera a hipótese de transcrição e somente essa hipótese temporária entra no turno. Áudio/transcrição não são armazenados.
 
-`writing_attempts` e `writing_issue_summary` armazenam somente métricas, categorias e vínculo de revisão. Não são persistidos:
+### Sessão imersiva
 
-- texto escrito;
-- texto original;
-- texto corrigido;
-- conteúdo de sugestões completas.
+O botão **Sessão imersiva 15–20 min** monta uma sequência local de:
 
-**Analisar sem salvar** não cria uma tentativa no banco. **Registrar tentativa** mantém apenas as métricas necessárias para evolução pedagógica. O backup segue a mesma fronteira.
+1. um diálogo ramificado, alvo de 10 minutos;
+2. uma história graduada com recuperação de ideias, alvo de 8 minutos.
 
-O “índice de revisão” não é uma nota CEFR nem garantia de correção: LanguageTool e regras heurísticas podem gerar falso positivo ou deixar erros passar.
+A meta explícita é manter **pelo menos 85% da produção em espanhol**. Português é reservado para explicações quando necessário.
 
-Detalhes: `docs/WRITING.md` e `docs/FREE-TOOLS.md`.
+A seleção considera:
+
+- nível atual;
+- conteúdo concluído recentemente;
+- contexto escolhido;
+- habilidades mais fracas do histórico.
+
+A revisão do Bloco 8 pode analisar transitoriamente a resposta para mostrar pontos linguísticos no próprio turno. Esses textos não entram no banco.
+
+### Histórias graduadas
+
+As histórias exigem leitura contextual e recuperação das ideias com palavras próprias. A resposta é avaliada pela informação comunicada, não por uma única frase literal.
+
+### Evolução e gamificação
+
+Sessões concluídas alimentam `reviews`, `activity`, `skill_mastery` e `skill_events`. O dashboard pode apontar conversação ou um contexto de imersão como ponto de atenção.
+
+Para reduzir repetição apenas por XP, concluir o mesmo conteúdo novamente dentro de sete dias aplica desconto forte de recompensa. A política geral de gamificação será ampliada no Bloco 10.
+
+### Privacidade da imersão
+
+As tabelas `immersion_sessions` e `immersion_turn_metrics` guardam somente:
+
+- conteúdo/cenário utilizado;
+- etapa atual;
+- modo de entrada;
+- número de turnos e palavras;
+- êxito comunicativo;
+- quantidade de alertas linguísticos;
+- índice agregado de revisão;
+- score e XP.
+
+Não são persistidos resposta do usuário, transcrição, áudio ou texto produzido. O backup segue a mesma fronteira.
+
+Detalhes: `docs/IMMERSION.md`.
+
+## Trilha JW
+
+A rota `/jw.html` oferece a trilha especializada e integra designações, fala, escrita e Imersão.
+
+Os cenários de congregação do Bloco 9 são conteúdo **original do SIDES** voltado a competências linguísticas — conversar antes/depois da reunião, praticar comentários, apoiar alguém e receber feedback sobre um discurso. O SIDES **não raspa, copia, armazena, redistribui nem incorpora automaticamente** versículos, artigos, publicações, imagens, vídeos ou áudios do JW.org.
+
+Detalhes: `docs/JW-TRACK.md`.
 
 ## O que já funciona
 
@@ -125,36 +158,25 @@ Detalhes: `docs/WRITING.md` e `docs/FREE-TOOLS.md`.
 - dashboard pedagógico e índice de atenção 0–100;
 - FSRS e controle de dívida de revisão;
 - vocabulário, chunks, contrastes português ↔ espanhol e falsos cognatos;
-- explicações “Entender o correto”;
-- gramática contextual;
-- listening/ditado;
-- leitura graduada;
-- sessão diária adaptativa;
-- mapa curricular expandido A1–B2;
+- gramática contextual, listening e leitura graduada;
+- currículo A1–B2 expandido;
 - Trilha JW;
-- Minhas designações com plano, ensaios e prontidão;
-- fala offline com Whisper opcional e análise comparativa;
-- escrita inteligente com 32 propostas A1–B2 e texto livre;
-- LanguageTool local opcional com bloqueio de endpoints remotos;
-- reescrita adaptativa e recuperação de padrões;
+- Minhas designações;
+- fala offline com Whisper opcional;
+- escrita inteligente com LanguageTool local opcional;
+- imersão com 32 diálogos ramificados e 16 histórias;
+- resposta imersiva por texto, opção guiada ou voz;
+- sessão combinada de aproximadamente 18 minutos;
+- seleção adaptativa e reparo comunicativo;
+- proteção inicial contra XP por repetição;
 - backup JSON;
 - persistência SQLite local;
-- migração aditiva até `SIDES-DB-V7`;
-- sub-schema `SIDES-JW-ASSIGNMENTS-V1`;
-- sub-schema `SIDES-SPEECH-V1`;
-- sub-schema `SIDES-WRITING-V1`;
-- API local `SIDES-API-V6`;
-- export `SIDES-EXPORT-V6`;
+- migração aditiva até `SIDES-DB-V8`;
+- sub-schemas `SIDES-JW-ASSIGNMENTS-V1`, `SIDES-SPEECH-V1`, `SIDES-WRITING-V1` e `SIDES-IMMERSION-V1`;
+- API local `SIDES-API-V7`;
+- export `SIDES-EXPORT-V7`;
 - binding exclusivo a `127.0.0.1`;
 - CSP e headers de segurança, sem CDN ou analytics.
-
-## Trilha JW
-
-A rota `/jw.html` oferece a trilha especializada e integra links para designações, fala e escrita.
-
-O SIDES **não raspa, copia, armazena, redistribui nem incorpora automaticamente** versículos, artigos, publicações, imagens, vídeos ou áudios do JW.org. Prompts da trilha de escrita relacionados à congregação exigem formulação com palavras próprias; texto produzido pelo usuário também não entra no histórico do banco.
-
-Detalhes: `docs/JW-TRACK.md`.
 
 ## Privacidade e custos
 
@@ -162,11 +184,9 @@ Detalhes: `docs/JW-TRACK.md`.
 - `data/`, binários, modelos e LanguageTool local não são versionados;
 - sem conta, token, telemetria ou API paga;
 - FSRS é local;
-- Whisper é local e opcional;
-- Piper é local e opcional;
-- LanguageTool é local e opcional;
+- Whisper, Piper e LanguageTool são locais e opcionais;
 - áudio/transcrição não entram no banco;
-- texto de escrita não entra no banco;
+- textos de escrita e respostas de imersão não entram no banco;
 - o caminho funcional básico permanece disponível sem componentes pesados.
 
 ## Validação
@@ -175,6 +195,6 @@ Detalhes: `docs/JW-TRACK.md`.
 npm run check
 ```
 
-O gate cobre sintaxe, migração V2→V7, FSRS, motor adaptativo, currículo A1–B2, Trilha JW, designações, fala, escrita, bloqueio de correção remota, reescrita/recuperação e privacidade do schema/backup.
+O gate cobre sintaxe, migração V2→V8, FSRS, motor adaptativo, currículo A1–B2, Trilha JW, designações, fala, escrita, imersão, ramificação/reparo, adaptação, proteção inicial contra XP repetido e privacidade do schema/backup.
 
-Dados reais de estudo, gravações, textos produzidos, modelos, binários e backups nunca devem ser adicionados ao Git.
+Dados reais de estudo, gravações, textos produzidos, respostas de conversa, modelos, binários e backups nunca devem ser adicionados ao Git.
