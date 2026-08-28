@@ -8,117 +8,24 @@ import { getImmersionSession, immersionOverview, immersionPlan, respondImmersion
 const NOW=new Date('2026-08-28T19:00:00Z');
 const fallbackOnly={env:{SIDES_LANGUAGETOOL_URL:'https://api.languagetool.org'}};
 
-test('immersion pack covers A1-B2 with 32 branched scenarios and 16 graded stories',()=>{
-  assert.deepEqual(IMMERSION_COUNTS,{scenarios:32,stories:16});
-  for(const level of ['A1','A2','B1','B2']){
-    assert.equal(IMMERSION_SCENARIOS.filter(x=>x.level===level).length,8);
-    assert.equal(IMMERSION_STORIES.filter(x=>x.level===level).length,4);
-  }
-  assert.ok(IMMERSION_SCENARIOS.some(x=>x.topic==='congregation'));
-  assert.ok(IMMERSION_SCENARIOS.some(x=>x.topic==='travel'));
-  assert.ok(IMMERSION_SCENARIOS.every(x=>x.nodes.length>=3));
-});
+test('immersion pack covers A1-B2 with 32 branched scenarios and 16 graded stories',()=>{assert.deepEqual(IMMERSION_COUNTS,{scenarios:32,stories:16});for(const level of ['A1','A2','B1','B2']){assert.equal(IMMERSION_SCENARIOS.filter(x=>x.level===level).length,8);assert.equal(IMMERSION_STORIES.filter(x=>x.level===level).length,4);}assert.ok(IMMERSION_SCENARIOS.some(x=>x.topic==='congregation'));assert.ok(IMMERSION_SCENARIOS.some(x=>x.topic==='travel'));assert.ok(IMMERSION_SCENARIOS.every(x=>x.nodes.length>=3));});
 
-test('V8 immersion schema stores metrics and routing state, never user response or transcript',()=>{
-  const db=openDatabase(':memory:');
-  assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V8');
-  assert.equal(db.prepare("SELECT value FROM meta WHERE key='immersionSchemaVersion'").get().value,'SIDES-IMMERSION-V1');
-  assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='immersion_sessions'").get());
-  assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='immersion_turn_metrics'").get());
-  assert.ok(db.prepare('PRAGMA table_info(activity)').all().some(x=>x.name==='immersion'));
-  const cols=[...db.prepare('PRAGMA table_info(immersion_sessions)').all(),...db.prepare('PRAGMA table_info(immersion_turn_metrics)').all()].map(x=>x.name);
-  const forbidden=new Set(['text','body','content','response','user_response','transcript','recognized_text','audio','blob','recording']);
-  assert.equal(cols.some(x=>forbidden.has(x)),false);
-});
+test('V9 immersion schema stores metrics and routing state, never user response or transcript',()=>{const db=openDatabase(':memory:');assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V9');assert.equal(db.prepare("SELECT value FROM meta WHERE key='immersionSchemaVersion'").get().value,'SIDES-IMMERSION-V1');assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='immersion_sessions'").get());assert.ok(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='immersion_turn_metrics'").get());assert.ok(db.prepare('PRAGMA table_info(activity)').all().some(x=>x.name==='immersion'));const cols=[...db.prepare('PRAGMA table_info(immersion_sessions)').all(),...db.prepare('PRAGMA table_info(immersion_turn_metrics)').all()].map(x=>x.name);const forbidden=new Set(['text','body','content','response','user_response','transcript','recognized_text','audio','blob','recording']);assert.equal(cols.some(x=>forbidden.has(x)),false);});
 
-test('unassessed learner is gated to A1 in both conversation and story modes',()=>{
-  const db=openDatabase(':memory:');setMeta(db,'placementLevel','UNASSESSED');
-  const conversation=startImmersion(db,{mode:'scenario'},NOW);
-  const story=startImmersion(db,{mode:'story'},NOW);
-  assert.equal(conversation.level,'A1');assert.equal(story.level,'A1');
-  assert.ok(conversation.node?.text);assert.ok(story.story?.body);assert.ok(story.question?.prompt);
-});
+test('unassessed learner is gated to A1 in both conversation and story modes',()=>{const db=openDatabase(':memory:');setMeta(db,'placementLevel','UNASSESSED');const conversation=startImmersion(db,{mode:'scenario'},NOW),story=startImmersion(db,{mode:'story'},NOW);assert.equal(conversation.level,'A1');assert.equal(story.level,'A1');assert.ok(conversation.node?.text);assert.ok(story.story?.body);assert.ok(story.question?.prompt);});
 
-test('free Spanish responses advance a branched scenario and completion awards XP once',async()=>{
-  const db=openDatabase(':memory:');
-  const session=startImmersion(db,{mode:'scenario',contentId:'a1-saludo'},NOW);
-  const a=await respondImmersion(db,session.id,{text:'Me llamo Ana.',inputMode:'text',responseMs:12000},NOW,fallbackOnly);
-  assert.equal(a.success,true);assert.equal(a.session.node.id,'n2');
-  const b=await respondImmersion(db,session.id,{text:'Soy de Brasil.',inputMode:'text',responseMs:9000},new Date(NOW.getTime()+1000),fallbackOnly);
-  assert.equal(b.success,true);assert.equal(b.session.node.id,'n3');
-  const c=await respondImmersion(db,session.id,{text:'Me gusta leer y estudiar español.',inputMode:'text',responseMs:11000},new Date(NOW.getTime()+2000),fallbackOnly);
-  assert.equal(c.completed,true);assert.equal(c.session.status,'completed');assert.ok(c.session.score>=65);assert.ok(c.session.xp>0);
-  assert.equal(db.prepare("SELECT immersion FROM activity WHERE day='2026-08-28'").get().immersion,1);
-  assert.equal(db.prepare("SELECT COUNT(*) n FROM reviews WHERE mode='immersion'").get().n,1);
-});
+test('free Spanish responses advance a branched scenario and completion awards XP once',async()=>{const db=openDatabase(':memory:');const session=startImmersion(db,{mode:'scenario',contentId:'a1-saludo'},NOW);const a=await respondImmersion(db,session.id,{text:'Me llamo Ana.',inputMode:'text',responseMs:12000},NOW,fallbackOnly);assert.equal(a.success,true);assert.equal(a.session.node.id,'n2');const b=await respondImmersion(db,session.id,{text:'Soy de Brasil.',inputMode:'text',responseMs:9000},new Date(NOW.getTime()+1000),fallbackOnly);assert.equal(b.success,true);assert.equal(b.session.node.id,'n3');const c=await respondImmersion(db,session.id,{text:'Me gusta leer y estudiar español.',inputMode:'text',responseMs:11000},new Date(NOW.getTime()+2000),fallbackOnly);assert.equal(c.completed,true);assert.equal(c.session.status,'completed');assert.ok(c.session.score>=65);assert.ok(c.session.xp>0);assert.equal(db.prepare("SELECT immersion FROM activity WHERE day='2026-08-28'").get().immersion,1);assert.equal(db.prepare("SELECT COUNT(*) n FROM reviews WHERE mode='immersion'").get().n,1);});
 
-test('unrecognized intent does not silently advance the dialogue and offers repair',async()=>{
-  const db=openDatabase(':memory:');
-  const session=startImmersion(db,{mode:'scenario',contentId:'a1-direcciones'},NOW);
-  const result=await respondImmersion(db,session.id,{text:'No entiendo nada de esto.',responseMs:8000},NOW,fallbackOnly);
-  assert.equal(result.success,false);assert.equal(result.session.node.id,'n1');assert.ok(result.repair.models.length>=1);
-  const stored=getImmersionSession(db,session.id);assert.equal(stored.turns,1);assert.equal(stored.successfulTurns,0);
-});
+test('unrecognized intent does not silently advance the dialogue and offers repair',async()=>{const db=openDatabase(':memory:');const session=startImmersion(db,{mode:'scenario',contentId:'a1-direcciones'},NOW);const result=await respondImmersion(db,session.id,{text:'No entiendo nada de esto.',responseMs:8000},NOW,fallbackOnly);assert.equal(result.success,false);assert.equal(result.session.node.id,'n1');assert.ok(result.repair.models.length>=1);const stored=getImmersionSession(db,session.id);assert.equal(stored.turns,1);assert.equal(stored.successfulTurns,0);});
 
-test('graded story advances through comprehension questions and records completion metrics only',async()=>{
-  const db=openDatabase(':memory:');
-  const s=startImmersion(db,{mode:'story',contentId:'a1-historia-mercado'},NOW);
-  const one=await respondImmersion(db,s.id,{text:'Compra tomates, pan y naranjas.'},NOW,fallbackOnly);assert.equal(one.success,true);assert.equal(one.session.question.index,1);
-  const two=await respondImmersion(db,s.id,{text:'No consigue leche.'},new Date(NOW.getTime()+1000),fallbackOnly);assert.equal(two.success,true);assert.equal(two.session.question.index,2);
-  const three=await respondImmersion(db,s.id,{text:'Llama a su hermana.'},new Date(NOW.getTime()+2000),fallbackOnly);assert.equal(three.completed,true);assert.equal(three.session.status,'completed');
-  const turn=db.prepare('SELECT * FROM immersion_turn_metrics WHERE session_id=? LIMIT 1').get(s.id);assert.equal(Object.hasOwn(turn,'text'),false);assert.equal(Object.hasOwn(turn,'transcript'),false);
-});
+test('graded story advances through comprehension questions and records completion metrics only',async()=>{const db=openDatabase(':memory:');const s=startImmersion(db,{mode:'story',contentId:'a1-historia-mercado'},NOW);const one=await respondImmersion(db,s.id,{text:'Compra tomates, pan y naranjas.'},NOW,fallbackOnly);assert.equal(one.success,true);assert.equal(one.session.question.index,1);const two=await respondImmersion(db,s.id,{text:'No consigue leche.'},new Date(NOW.getTime()+1000),fallbackOnly);assert.equal(two.success,true);assert.equal(two.session.question.index,2);const three=await respondImmersion(db,s.id,{text:'Llama a su hermana.'},new Date(NOW.getTime()+2000),fallbackOnly);assert.equal(three.completed,true);assert.equal(three.session.status,'completed');const turn=db.prepare('SELECT * FROM immersion_turn_metrics WHERE session_id=? LIMIT 1').get(s.id);assert.equal(Object.hasOwn(turn,'text'),false);assert.equal(Object.hasOwn(turn,'transcript'),false);});
 
-test('adaptive recommendation favors current level and a weak matching skill',()=>{
-  const db=openDatabase(':memory:');setMeta(db,'placementLevel','B2');
-  db.prepare(`INSERT INTO skill_mastery(skill_type,skill_key,attempts,correct,score,last_seen_at) VALUES ('writing','register',8,2,.18,?)`).run(NOW.toISOString());
-  const s=startImmersion(db,{mode:'scenario'},NOW);
-  assert.equal(s.level,'B2');
-  assert.ok(['b2-negociacion','b2-presentacion','b2-conflicto','b2-congregacion','b2-discurso'].includes(s.contentId));
-});
+test('adaptive recommendation favors current level and a weak matching skill',()=>{const db=openDatabase(':memory:');setMeta(db,'placementLevel','B2');db.prepare(`INSERT INTO skill_mastery(skill_type,skill_key,attempts,correct,score,last_seen_at) VALUES ('writing','register',8,2,.18,?)`).run(NOW.toISOString());const s=startImmersion(db,{mode:'scenario'},NOW);assert.equal(s.level,'B2');assert.ok(['b2-negociacion','b2-presentacion','b2-conflicto','b2-congregacion','b2-discurso'].includes(s.contentId));});
 
-test('immersion plan combines scenario and story into a predominantly Spanish 15-20 minute session',()=>{
-  const db=openDatabase(':memory:');
-  const plan=immersionPlan(db,NOW);
-  assert.equal(plan.items.length,2);assert.deepEqual(plan.items.map(x=>x.mode),['scenario','story']);
-  assert.ok(plan.targetMinutes>=15&&plan.targetMinutes<=20);assert.equal(plan.languageRatioTarget,85);
-});
+test('immersion plan combines scenario and story into a predominantly Spanish 15-20 minute session',()=>{const db=openDatabase(':memory:');const plan=immersionPlan(db,NOW);assert.equal(plan.items.length,2);assert.deepEqual(plan.items.map(x=>x.mode),['scenario','story']);assert.ok(plan.targetMinutes>=15&&plan.targetMinutes<=20);assert.equal(plan.languageRatioTarget,85);});
 
-test('repeat completion is discounted to reduce XP farming',async()=>{
-  const db=openDatabase(':memory:');
-  async function complete(at){
-    const s=startImmersion(db,{mode:'scenario',contentId:'a1-saludo'},at);
-    await respondImmersion(db,s.id,{text:'Me llamo Ana.'},at,fallbackOnly);
-    await respondImmersion(db,s.id,{text:'Soy de Brasil.'},new Date(at.getTime()+1000),fallbackOnly);
-    return (await respondImmersion(db,s.id,{text:'Me gusta leer.'},new Date(at.getTime()+2000),fallbackOnly)).session.xp;
-  }
-  const first=await complete(NOW),second=await complete(new Date(NOW.getTime()+3600000));
-  assert.ok(first>second);assert.ok(second>=4);
-});
+test('repeat completion is discounted to reduce XP farming',async()=>{const db=openDatabase(':memory:');async function complete(at){const s=startImmersion(db,{mode:'scenario',contentId:'a1-saludo'},at);await respondImmersion(db,s.id,{text:'Me llamo Ana.'},at,fallbackOnly);await respondImmersion(db,s.id,{text:'Soy de Brasil.'},new Date(at.getTime()+1000),fallbackOnly);return (await respondImmersion(db,s.id,{text:'Me gusta leer.'},new Date(at.getTime()+2000),fallbackOnly)).session.xp;}const first=await complete(NOW),second=await complete(new Date(NOW.getTime()+3600000));assert.ok(first>second);assert.ok(second>=4);});
 
-test('HTTP immersion API and backup contain session metrics but never response text',async()=>{
-  const db=openDatabase(':memory:');
-  const server=createSidesServer({db,now:()=>NOW,writingDeps:fallbackOnly});
-  await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve)});
-  try{
-    const {port}=server.address(),base=`http://127.0.0.1:${port}`;
-    const health=await fetch(`${base}/api/health`).then(r=>r.json());assert.equal(health.schema,'SIDES-API-V7');
-    const plan=await fetch(`${base}/api/immersion/plan`).then(r=>r.json());assert.equal(plan.languageRatioTarget,85);
-    const started=await fetch(`${base}/api/immersion/start`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'scenario',contentId:'a1-saludo'})}).then(r=>r.json());
-    const phrase='Me llamo TextoQueNoDebePersistir.';
-    const response=await fetch(`${base}/api/immersion/${started.id}/respond`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:phrase,inputMode:'voice'})}).then(r=>r.json());assert.equal(response.success,true);
-    const overview=await fetch(`${base}/api/immersion/overview`).then(r=>r.json());assert.ok(overview.sessions>=1);
-    const backup=await fetch(`${base}/api/export`).then(r=>r.json());assert.equal(backup.schemaVersion,'SIDES-EXPORT-V7');
-    assert.equal(backup.tables.immersion_sessions.length,1);assert.equal(backup.tables.immersion_turn_metrics.length,1);
-    const serialized=JSON.stringify({sessions:backup.tables.immersion_sessions,turns:backup.tables.immersion_turn_metrics});
-    assert.equal(serialized.includes('TextoQueNoDebePersistir'),false);
-  }finally{await new Promise(resolve=>server.close(resolve))}
-});
+test('HTTP immersion API and backup contain session metrics but never response text',async()=>{const db=openDatabase(':memory:');const server=createSidesServer({db,now:()=>NOW,writingDeps:fallbackOnly});await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve)});try{const {port}=server.address(),base=`http://127.0.0.1:${port}`;const health=await fetch(`${base}/api/health`).then(r=>r.json());assert.equal(health.schema,'SIDES-API-V8');const plan=await fetch(`${base}/api/immersion/plan`).then(r=>r.json());assert.equal(plan.languageRatioTarget,85);const started=await fetch(`${base}/api/immersion/start`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'scenario',contentId:'a1-saludo'})}).then(r=>r.json());const phrase='Me llamo TextoQueNoDebePersistir.';const response=await fetch(`${base}/api/immersion/${started.id}/respond`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:phrase,inputMode:'voice'})}).then(r=>r.json());assert.equal(response.success,true);const overview=await fetch(`${base}/api/immersion/overview`).then(r=>r.json());assert.ok(overview.sessions>=1);const backup=await fetch(`${base}/api/export`).then(r=>r.json());assert.equal(backup.schemaVersion,'SIDES-EXPORT-V8');assert.equal(backup.tables.immersion_sessions.length,1);assert.equal(backup.tables.immersion_turn_metrics.length,1);const serialized=JSON.stringify({sessions:backup.tables.immersion_sessions,turns:backup.tables.immersion_turn_metrics});assert.equal(serialized.includes('TextoQueNoDebePersistir'),false);}finally{await new Promise(resolve=>server.close(resolve))}});
 
-test('immersion overview exposes aggregate evolution without user-produced content',async()=>{
-  const db=openDatabase(':memory:');
-  const s=startImmersion(db,{mode:'scenario',contentId:'a1-saludo'},NOW);
-  await respondImmersion(db,s.id,{text:'Me llamo Ana.'},NOW,fallbackOnly);
-  const o=immersionOverview(db,30,new Date(NOW.getTime()+1000));
-  assert.equal(o.sessions,1);assert.ok(o.plan.items.length===2);assert.equal(JSON.stringify(o).includes('Me llamo Ana'),false);
-});
+test('immersion overview exposes aggregate evolution without user-produced content',async()=>{const db=openDatabase(':memory:');const s=startImmersion(db,{mode:'scenario',contentId:'a1-saludo'},NOW);await respondImmersion(db,s.id,{text:'Me llamo Ana.'},NOW,fallbackOnly);const o=immersionOverview(db,30,new Date(NOW.getTime()+1000));assert.equal(o.sessions,1);assert.ok(o.plan.items.length===2);assert.equal(JSON.stringify(o).includes('Me llamo Ana'),false);});
