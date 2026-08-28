@@ -11,7 +11,8 @@ A regra arquitetural é não depender de um serviço cujo “grátis” possa ac
 | MediaRecorder + Web Audio | gravação/conversão/análise de pausas | zero | fala | ativo |
 | `whisper.cpp` | reconhecimento de fala | zero | ASR local opcional | ativo no Bloco 7 |
 | Piper | síntese de voz | zero | TTS local opcional | adaptador ativo; modelo/voz não incluído |
-| LanguageTool | correção gramatical | zero | opcional | Bloco 8 |
+| LanguageTool | correção gramatical | zero | escrita local opcional | ativo no Bloco 8; somente loopback |
+| Regras SIDES de escrita | revisão conservadora | zero | fallback de escrita | ativo no Bloco 8 |
 | spaCy + modelos ES | NLP | zero | opcional | futuro |
 
 ## FSRS
@@ -60,14 +61,53 @@ Motivos:
 
 Quando Piper não estiver configurado, o SIDES continua usando `SpeechSynthesis` e as vozes espanholas disponíveis no navegador/SO.
 
-## Privacidade de voz
+## LanguageTool — Bloco 8
+
+O LanguageTool é **opcional**. A área de escrita funciona sem ele por meio das regras locais conservadoras do SIDES.
+
+A integração segue uma regra de privacidade fail-closed:
+
+- o backend aceita apenas `http://127.0.0.1`, `http://localhost` ou equivalente IPv6 de loopback;
+- URLs públicas ou remotas são rejeitadas antes de qualquer requisição;
+- o SIDES não usa `api.languagetool.org` para textos do usuário;
+- se o servidor local parar, a revisão continua com o fallback SIDES.
+
+O configurador Windows `CONFIGURAR-GRAMATICA-LOCAL.ps1` usa a última versão estável publicada como ZIP antes da migração do projeto para snapshots diários:
+
+- LanguageTool **6.6**;
+- arquivo `LanguageTool-6.6.zip`;
+- SHA-256 esperado: `53600506b399bb5ffe1e4c8dec794fd378212f14aaf38ccef9b6f89314d11631`;
+- Java 17+;
+- instalação local em `tools/languagetool/`, ignorada pelo Git.
+
+O launcher inicia o servidor local em `127.0.0.1:8081` quando a instalação está presente. Versões snapshot mais novas podem ser usadas manualmente, desde que executadas localmente e compatíveis com `/v2/check` e `/v2/languages`; elas não são baixadas automaticamente pelo SIDES porque snapshots mutáveis dificultam checksum e reprodutibilidade.
+
+### Limite da correção automática
+
+LanguageTool e regras heurísticas podem gerar falso positivo, deixar erros passar ou não compreender totalmente a intenção pragmática. Por isso:
+
+- o SIDES chama o resultado de **índice de revisão**, não de nota absoluta de proficiência;
+- sugestões são apresentadas como apoio à revisão;
+- o usuário pode ignorar uma sugestão que não faça sentido no contexto;
+- o aprendizado adaptativo prioriza padrões recorrentes e recuperação por reescrita, não apenas quantidade bruta de alertas.
+
+## Privacidade de voz e escrita
+
+### Voz
 
 - gravação fica em memória no navegador;
 - WAV enviado ao servidor local fica apenas no loopback;
 - o runtime Whisper cria arquivo temporário no diretório temporário do SO e o remove ao finalizar;
 - SQLite não armazena áudio, transcrição nem texto-alvo;
-- o histórico guarda somente métricas agregadas;
-- modelos e binários locais não entram no backup de progresso.
+- o histórico guarda somente métricas agregadas.
+
+### Escrita
+
+- análise sem salvar não cria tentativa no banco;
+- ao registrar uma tentativa, SQLite guarda contagem de palavras/caracteres, índice de revisão, categorias, motor e vínculo de reescrita;
+- SQLite não armazena texto produzido, texto corrigido ou sugestões completas;
+- o backup mantém essa mesma fronteira e exporta somente métricas/categorias;
+- o LanguageTool opcional recebe o texto somente no processo local em loopback.
 
 ## Decisões gerais
 

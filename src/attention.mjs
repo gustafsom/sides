@@ -16,7 +16,12 @@ const guidance = {
   'contrast:falso-cognato-embarazada':['Falso cognato: embarazada','“Embarazada” significa grávida; “avergonzado(a)” é envergonhado(a).','Revise junto com outro falso cognato para fortalecer o contraste.'],
   'contrast:por-para-finalidade':['Finalidade com para','Use “para” quando a segunda ideia responde “para quê?”.','Complete oralmente cinco objetivos pessoais com “para + infinitivo”.'],
   'contrast:por-para-causa':['Causa com por','Use “por” quando a ideia responde “por qual motivo?”; “gracias por” é uma combinação frequente.','Pratique “gracias por…” com três exemplos.'],
-  'jw:bible-books':['Livros da Bíblia','A recuperação rápida dos nomes e abreviações reduz a carga mental durante leituras e discursos.','Faça uma rodada curta português → espanhol e abreviação → livro.']
+  'jw:bible-books':['Livros da Bíblia','A recuperação rápida dos nomes e abreviações reduz a carga mental durante leituras e discursos.','Faça uma rodada curta português → espanhol e abreviação → livro.'],
+  'writing:pt-interference':['Interferência do português','Algumas formas estão sendo transferidas diretamente do português para o espanhol.','Reescreva a ideia sem traduzir palavra por palavra e produza outro exemplo com a expressão espanhola.'],
+  'writing:accent-spelling':['Acentuação e grafia','A forma lexical está próxima, mas a ortografia espanhola ainda não está automática.','Digite novamente as palavras corrigidas em frases diferentes, sem copiar.'],
+  'writing:agreement':['Concordância na escrita','Gênero, número ou concordância entre os elementos ainda gera revisão.','Localize os pares relacionados e faça uma segunda versão mudando singular/plural.'],
+  'writing:verb':['Formas verbais na escrita','A escolha ou formação verbal ainda aparece como ponto de revisão nos textos.','Identifique sujeito e tempo e reescreva a frase com outra pessoa verbal.'],
+  'writing:preposition':['Preposições na escrita','Preposições espanholas nem sempre correspondem diretamente às do português.','Memorize a combinação inteira e escreva duas frases com a mesma estrutura.']
 };
 
 const genericByType = {
@@ -25,6 +30,7 @@ const genericByType = {
   listening:['Compreensão oral','A transcrição indica que a forma sonora ainda não está totalmente consolidada.','Ouça uma vez devagar, uma vez em velocidade normal e repita em voz alta.'],
   reading:['Compreensão de leitura','A recuperação das ideias do texto ainda precisa de reforço.','Leia uma vez sem traduzir e responda com suas próprias palavras.'],
   speaking:['Produção oral','A habilidade oral melhora com repetição curta e frequente, não apenas com sessões longas.','Grave, ouça e repita uma segunda vez corrigindo um único aspecto.'],
+  writing:['Produção escrita','O histórico de textos mostra um padrão recorrente que merece revisão direcionada.','Abra Escrita inteligente, faça um texto curto focado nesse padrão e reescreva após o feedback.'],
   chunk:['Frases e chunks','A expressão precisa se tornar uma unidade automática, sem tradução palavra por palavra.','Repita o chunk em três contextos diferentes.'],
   contrast:['Português x espanhol','Há interferência provável do português ou um falso cognato.','Estude o par em contraste e produza uma frase em espanhol.'],
   jw:['Trilha JW','Este ponto merece reforço para uso espontâneo em reuniões, leituras ou discursos.','Faça uma prática curta e específica na Trilha JW.']

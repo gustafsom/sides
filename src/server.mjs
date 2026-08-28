@@ -9,6 +9,7 @@ import { assignmentOverview, createAssignment, getAssignment, listAssignments, r
 import { analyzeSpeech, nextSpeechTarget, speechOverview } from './speech-service.mjs';
 import { speechRuntimeStatus, transcribeWhisper } from './speech-runtime.mjs';
 import { piperStatus, synthesizePiper } from './tts-runtime.mjs';
+import { checkWriting, nextWritingPrompt, submitWriting, writingOverview, writingStatus } from './writing-service.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('../', import.meta.url)));
 const PUBLIC = join(ROOT,'public');
@@ -54,19 +55,19 @@ async function staticFile(req,res) {
 
 function extendedExport(db) {
   const data=exportData(db);
-  data.schemaVersion='SIDES-EXPORT-V5';
-  for(const table of ['jw_assignments','jw_assignment_practices','speech_attempts']){
+  data.schemaVersion='SIDES-EXPORT-V6';
+  for(const table of ['jw_assignments','jw_assignment_practices','speech_attempts','writing_attempts','writing_issue_summary']){
     const exists=db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(table);
     if(exists)data.tables[table]=db.prepare(`SELECT * FROM ${table}`).all();
   }
   return data;
 }
 
-export function createSidesServer({db=openDatabase(), now=()=>new Date()}={}) {
+export function createSidesServer({db=openDatabase(), now=()=>new Date(), writingDeps={}}={}) {
   return createServer(async (req,res)=>{
     try {
       const url = new URL(req.url,'http://localhost');
-      if (url.pathname === '/api/health' && req.method==='GET') return json(res,200,{ok:true,app:'SIDES',schema:'SIDES-API-V5',time:now().toISOString()});
+      if (url.pathname === '/api/health' && req.method==='GET') return json(res,200,{ok:true,app:'SIDES',schema:'SIDES-API-V6',time:now().toISOString()});
       if (url.pathname === '/api/dashboard' && req.method==='GET') return json(res,200,dashboard(db,now()));
       if (url.pathname === '/api/progress' && req.method==='GET') return json(res,200,progressDashboard(db,now(),Number(url.searchParams.get('days')||30)));
       if (url.pathname === '/api/curriculum' && req.method==='GET') return json(res,200,curriculumStatus(db));
@@ -114,6 +115,12 @@ export function createSidesServer({db=openDatabase(), now=()=>new Date()}={}) {
       }
       if (url.pathname === '/api/speech/analyze' && req.method==='POST') return json(res,200,analyzeSpeech(db,await body(req),now()));
       if (url.pathname === '/api/speech/tts' && req.method==='POST') return binary(res,200,await synthesizePiper((await body(req)).text), 'audio/wav');
+
+      if (url.pathname === '/api/writing/status' && req.method==='GET') return json(res,200,await writingStatus(writingDeps));
+      if (url.pathname === '/api/writing/overview' && req.method==='GET') return json(res,200,writingOverview(db,Number(url.searchParams.get('days')||30),now()));
+      if (url.pathname === '/api/writing/prompt' && req.method==='GET') return json(res,200,{item:nextWritingPrompt(db,url.searchParams.get('skill')||null)});
+      if (url.pathname === '/api/writing/check' && req.method==='POST') return json(res,200,await checkWriting((await body(req)).text,writingDeps));
+      if (url.pathname === '/api/writing/submit' && req.method==='POST') return json(res,201,await submitWriting(db,await body(req),now(),writingDeps));
 
       if (url.pathname === '/api/export' && req.method==='GET') {
         const data=extendedExport(db);
