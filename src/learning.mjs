@@ -51,6 +51,7 @@ export function levelFromXp(xp) {
   return Math.floor(Math.sqrt(safe / 120)) + 1;
 }
 
+// Mantido apenas para compatibilidade com bancos/testes V1. Novas revisões usam FSRS em fsrs-adapter.mjs.
 export function scheduleReview(state = {}, rating = 3, now = new Date()) {
   const current = {
     intervalDays: Number(state.intervalDays || 0),
@@ -112,9 +113,10 @@ export function dailyQuest(progress = {}) {
   };
 }
 
-export function selectInterleavedSession({ dueVocabulary = [], grammar = [], listening = [], reading = [], limit = 20 }) {
+export function selectInterleavedSession({ dueVocabulary = [], learning = [], grammar = [], listening = [], reading = [], limit = 20 }) {
   const lanes = [
     dueVocabulary.map((item) => ({ ...item, kind: 'vocabulary' })),
+    learning.map((item) => ({ ...item, kind: item.kind || 'chunk' })),
     grammar.map((item) => ({ ...item, kind: 'grammar' })),
     listening.map((item) => ({ ...item, kind: 'listening' })),
     reading.map((item) => ({ ...item, kind: 'reading' }))

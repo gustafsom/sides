@@ -17,6 +17,8 @@ function updateMastery(db,{skillType,skillKey,correct,now,weight=1}) {
     correct=skill_mastery.correct+excluded.correct,
     score=excluded.score,
     last_seen_at=excluded.last_seen_at`).run(skillType,skillKey,1,correct?1:0,score,now.toISOString());
+  db.prepare('INSERT INTO skill_events(skill_type,skill_key,correct,score_after,created_at) VALUES (?,?,?,?,?)')
+    .run(skillType,skillKey,correct?1:0,score,now.toISOString());
   return score;
 }
 

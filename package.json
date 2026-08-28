@@ -1,15 +1,18 @@
 {
   "name": "sides",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "description": "SIDES - Sistema de Imersao e Desenvolvimento em Espanhol",
   "engines": {
     "node": ">=22.13.0"
   },
+  "dependencies": {
+    "ts-fsrs": "5.4.1"
+  },
   "scripts": {
     "start": "node src/server.mjs",
     "test": "node --test",
-    "check": "node --check src/server.mjs && node --check src/db.mjs && node --check src/learning.mjs && node --check src/jw-content.mjs && node --check src/jw-service.mjs && node --check public/jw.js && node --test"
+    "check": "node --check src/server.mjs && node --check src/db.mjs && node --check src/learning.mjs && node --check src/fsrs-adapter.mjs && node --check src/attention.mjs && node --check src/jw-content.mjs && node --check src/jw-service.mjs && node --check public/app.js && node --check public/jw.js && node --test"
   }
 }
