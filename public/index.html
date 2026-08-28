@@ -20,24 +20,41 @@
 
     <section id="dashboardView" class="view">
       <div class="hero">
-        <div><span class="eyebrow">Hoje</span><h1>Progresso consistente vence maratonas.</h1><p id="heroText">Carregando seu plano...</p></div>
+        <div><span class="eyebrow">Hoje</span><h1>Estude o que mais melhora seu espanhol.</h1><p id="heroText">Carregando seu plano...</p></div>
         <button id="startSession">Começar sessão</button>
       </div>
       <div class="stats" id="stats"></div>
       <div class="grid two">
         <section class="card"><h2>Missão diária</h2><div id="quest"></div></section>
         <section class="card"><h2>Treino rápido</h2><div class="quick">
-          <button data-view="vocabulary">Vocabulário</button><button data-view="grammar">Gramática</button>
+          <button data-view="vocabulary">Vocabulário</button><button data-view="chunk">Frases / chunks</button>
+          <button data-view="contrast">Português × espanhol</button><button data-view="grammar">Gramática</button>
           <button data-view="listening">Escuta</button><button data-view="reading">Leitura</button>
           <button data-view="speaking">Fala / shadowing</button><button data-view="placement">Diagnóstico</button>
         </div></section>
       </div>
+
+      <section class="card progressCard">
+        <div class="sectionTitle"><div><span class="eyebrow">Dashboard pedagógico</span><h2>Evolução e pontos que precisam de atenção</h2></div><span id="trendBadge" class="trendBadge">Calculando…</span></div>
+        <div id="progressStats" class="progressStats"></div>
+        <div id="attentionList" class="attentionList"></div>
+      </section>
+
+      <div class="grid two">
+        <section class="card"><h2>Atividade · últimos 30 dias</h2><div id="activityChart" class="activityChart"></div><p id="activityNote" class="footerNote"></p></section>
+        <section class="card"><h2>Desempenho por habilidade</h2><div id="modePerformance"></div></section>
+      </div>
+      <div class="grid two">
+        <section class="card"><h2>Saúde das revisões</h2><div id="srsHealth"></div></section>
+        <section class="card"><h2>Padrões de erro</h2><div id="errorBreakdown"></div></section>
+      </div>
+
       <section class="card"><h2>Trilha JW</h2><p class="sub">Espanhol para leitura bíblica, comentários, reuniões e discursos, com conteúdo oficial aberto no JW.org/JW Library.</p><p><a href="/jw.html">Abrir Trilha JW →</a></p></section>
       <section class="card"><h2>Conquistas</h2><div id="achievements" class="principles"></div></section>
       <section class="card"><h2>Foco adaptativo</h2><div id="adaptiveFocus"></div></section>
       <section class="card"><h2>Variante de espanhol</h2><p class="sub">O conteúdo-base é internacional. A preferência ajusta principalmente a voz e futuras variantes lexicais.</p><select id="variantSelect"><option value="es">Internacional</option><option value="es-ES">Espanha</option><option value="es-MX">México</option><option value="es-AR">Argentina</option></select></section>
       <section class="card"><h2>Como o SIDES aprende com você</h2><div class="principles">
-        <span>Recuperação ativa</span><span>Repetição espaçada</span><span>Interleaving</span><span>Feedback imediato</span><span>Escuta graduada</span><span>Produção ativa</span>
+        <span>Recuperação ativa</span><span>FSRS</span><span>Interleaving</span><span>Feedback explicativo</span><span>Contraste português ↔ espanhol</span><span>Produção ativa</span>
       </div></section>
     </section>
 
