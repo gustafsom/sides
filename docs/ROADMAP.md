@@ -91,12 +91,24 @@ Os blocos têm entrega funcional independente. A linha de chegada definida é o 
 - Piper opcional e SpeechSynthesis do navegador/SO como fallback;
 - migração aditiva para `SIDES-DB-V6`.
 
-## Bloco 8 — Gramática e escrita inteligente
+## Bloco 8 — Gramática e escrita inteligente ✅
 
-- LanguageTool local opcional;
-- produção escrita livre;
-- classificação de erros;
-- repetição direcionada aos padrões encontrados.
+- área **Escrita inteligente** em `/writing.html`;
+- 32 propostas originais, com 8 atividades por nível A1, A2, B1 e B2;
+- texto livre e propostas adaptativas por ponto fraco;
+- contextos cotidianos, viagem, trabalho, opinião, congregação e discursos;
+- análise sem salvar ou registro da tentativa;
+- regras locais SIDES sempre disponíveis;
+- LanguageTool local opcional e bloqueio fail-closed de URLs remotas;
+- categorias de concordância, verbos, preposições, pronomes, ser/estar, por/para, ortografia, acentuação, pontuação, registro e estilo;
+- explicação e ação pedagógica por padrão;
+- reescrita vinculada à tentativa anterior;
+- padrão que desaparece na reescrita é registrado como recuperado;
+- escrita integrada a `skill_mastery`, `skill_events`, caderno de erros e índice de atenção;
+- propostas limitadas a A1 antes do diagnóstico;
+- banco guarda apenas métricas e categorias, nunca o texto produzido/corrigido;
+- instalador opcional do LanguageTool 6.6 com checksum verificado e Java 17+;
+- migração aditiva para `SIDES-DB-V7`.
 
 ## Bloco 9 — Imersão e conversação prática
 
