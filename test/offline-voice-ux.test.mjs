@@ -34,6 +34,17 @@ test('CURESP keeps audio local and does not silently fall back to remote browser
   assert.match(speech,/\/api\/speech\/transcribe/);
 });
 
+test('MediaRecorder stop handlers capture MIME type before asynchronous stop completes',()=>{
+  const immersion=read('public/immersion.js');
+  const speech=read('public/speech.js');
+  for(const source of [immersion,speech]){
+    assert.match(source,/const recorder=new MediaRecorder\(stream\),mimeType=recorder\.mimeType\|\|'audio\/webm'/);
+    assert.match(source,/recorder\.onstop=async\(\)=>\{if\(mediaRecorder===recorder\)mediaRecorder=null/);
+    assert.doesNotMatch(source,/new Blob\(chunks,\{type:mediaRecorder\.mimeType/);
+    assert.match(source,/function stop\(\)\{const recorder=mediaRecorder;if\(recorder&&recorder\.state!=='inactive'\)recorder\.stop\(\)/);
+  }
+});
+
 test('offline voice setup validates downloads and only restarts a verified CURESP local server',()=>{
   const setup=read('CONFIGURAR-VOZ-OFFLINE.ps1');
   assert.match(setup,/CURESP - Configuração da voz offline/);
