@@ -2,7 +2,7 @@
 
 Todas as mudanças relevantes do CURESP são registradas neste arquivo a partir da versão 1.0.0.
 
-## [1.1.0] - Em desenvolvimento
+## [1.1.1] - Em desenvolvimento
 
 ### Melhorado
 - diagnóstico com opções alinhadas, área de clique consistente e foco de teclado visível;
@@ -21,6 +21,7 @@ Todas as mudanças relevantes do CURESP são registradas neste arquivo a partir 
 
 ### Compatibilidade
 - banco, API, exportação, SQLite e demais contratos internos `SIDES-*` permanecem inalterados;
+- a versão de desenvolvimento passa a 1.1.1 para permitir atualização segura sobre instalações de teste 1.1.0 já existentes;
 - a release imutável `v1.0.0` não é modificada.
 
 ## [1.0.0] - 2026-08-29
