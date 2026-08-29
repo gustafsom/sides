@@ -18,6 +18,7 @@ function walk(dir,out=[]){
 }
 
 const pkg=JSON.parse(text(join(ROOT,'package.json')));
+if(pkg.name!=='curesp')fail('PRODUCT_IDENTITY_INVALID',pkg.name);
 if(pkg.version!=='1.0.0')fail('RELEASE_VERSION_INVALID',pkg.version);
 const deps=Object.entries(pkg.dependencies||{});
 if(deps.length!==1||deps[0][0]!=='ts-fsrs'||deps[0][1]!=='5.4.1')fail('DEPENDENCY_ALLOWLIST_DRIFT',JSON.stringify(pkg.dependencies||{}));
@@ -43,6 +44,7 @@ const ignore=text(join(ROOT,'.gitignore'));
 for(const pattern of ['data/*.sqlite','data/backups/','.env','tools/whisper/','tools/languagetool/','models/whisper/']){
   if(!ignore.includes(pattern))fail('GITIGNORE_GUARD_MISSING',pattern);
 }
+// sides.sqlite permanece como nome técnico legado do banco 1.0 para evitar migração destrutiva.
 for(const forbidden of ['data/sides.sqlite','.env'])if(existsSync(join(ROOT,forbidden)))fail('LOCAL_SENSITIVE_FILE_PRESENT',forbidden);
 
 const fsrsPkg=join(ROOT,'node_modules','ts-fsrs','package.json');
@@ -55,8 +57,13 @@ else{
 
 for(const doc of ['THIRD_PARTY_NOTICES.md','SECURITY.md','docs/LICENSE-AUDIT.md'])if(!existsSync(join(ROOT,doc)))fail('SECURITY_DOCUMENT_MISSING',doc);
 note('NETWORK_MODEL','Core runtime local-only; optional downloads are explicit setup actions.');
-note('PROJECT_LICENSE','SIDES project license is not inferred or changed by this gate; see docs/LICENSE-AUDIT.md.');
+note('PROJECT_LICENSE','CURESP project license is not inferred or changed by this gate; see docs/LICENSE-AUDIT.md.');
+note('LEGACY_IDS','SIDES-* schema/runtime identifiers are retained only for backwards compatibility of the 1.0 data contract.');
 
 const high=findings.filter(x=>x.severity==='high');
-console.log(JSON.stringify({schema:'SIDES-SECURITY-AUDIT-V1',ok:high.length===0,high:high.length,findings},null,2));
-if(high.length){process.exitCode=1}else console.log('SIDES_SECURITY_AUDIT_OK');
+console.log(JSON.stringify({schema:'CURESP-SECURITY-AUDIT-V1',ok:high.length===0,high:high.length,findings},null,2));
+if(high.length){process.exitCode=1}else{
+  console.log('CURESP_SECURITY_AUDIT_OK');
+  // Compatibilidade com o teste do gate criado antes da mudança de marca.
+  console.log('SIDES_SECURITY_AUDIT_OK');
+}
