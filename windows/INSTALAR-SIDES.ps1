@@ -1,5 +1,5 @@
 param(
-  [string]$InstallRoot = (Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'SIDES'),
+  [string]$InstallRoot = (Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'CURESP'),
   [string]$DataDir = '',
   [switch]$UpdateOnly,
   [switch]$NoLaunch,
@@ -9,7 +9,7 @@ param(
 $ErrorActionPreference='Stop'
 $PackageRoot=Split-Path -Parent $MyInvocation.MyCommand.Path
 
-function Show-Message([string]$Text,[string]$Title='SIDES',[string]$Icon='Information'){
+function Show-Message([string]$Text,[string]$Title='CURESP',[string]$Icon='Information'){
   if($Silent){return}
   try{Add-Type -AssemblyName PresentationFramework -ErrorAction Stop;[System.Windows.MessageBox]::Show($Text,$Title,'OK',$Icon)|Out-Null}catch{Write-Host $Text}
 }
@@ -30,6 +30,7 @@ function Verify-Package{
   $declared=((Get-Content -LiteralPath $manifestShaPath -Raw).Trim() -split '\s+')[0].ToLowerInvariant()
   if($declared -notmatch '^[a-f0-9]{64}$' -or $declared -ne (Sha256 $manifestPath)){ Fail 'PACKAGE_MANIFEST_CHECKSUM_MISMATCH' }
   $manifest=Get-Content -LiteralPath $manifestPath -Raw|ConvertFrom-Json
+  # SIDES-WINDOWS-PACKAGE-V1/SIDES sao IDs tecnicos legados preservados para compatibilidade do formato 1.0.
   if($manifest.schema -ne 'SIDES-WINDOWS-PACKAGE-V1' -or $manifest.app -ne 'SIDES' -or $manifest.architecture -ne 'win-x64'){ Fail 'PACKAGE_IDENTITY_INVALID' }
   $files=@($manifest.files);if([int]$manifest.fileCount -ne $files.Count){ Fail 'PACKAGE_MANIFEST_COUNT_INVALID' }
   $seen=@{}
@@ -47,7 +48,7 @@ function Verify-Package{
 function Write-State([string]$Path,$State){$temp="$Path.tmp";$State|ConvertTo-Json -Depth 5|Set-Content -LiteralPath $temp -Encoding UTF8;Move-Item -LiteralPath $temp -Destination $Path -Force}
 function New-Shortcut([string]$Path,[string]$Target,[string]$Arguments,[string]$WorkingDirectory){
   $dir=Split-Path -Parent $Path;if($dir){New-Item -ItemType Directory -Path $dir -Force|Out-Null};$shell=New-Object -ComObject WScript.Shell
-  $shortcut=$shell.CreateShortcut($Path);$shortcut.TargetPath=$Target;$shortcut.Arguments=$Arguments;$shortcut.WorkingDirectory=$WorkingDirectory;$shortcut.Description='SIDES - Sistema de Imersao e Desenvolvimento em Espanhol';$shortcut.Save()
+  $shortcut=$shell.CreateShortcut($Path);$shortcut.TargetPath=$Target;$shortcut.Arguments=$Arguments;$shortcut.WorkingDirectory=$WorkingDirectory;$shortcut.Description='CURESP - Curso de Espanhol';$shortcut.Save()
 }
 
 try{
@@ -71,6 +72,8 @@ try{
     try{Copy-Item -Path (Join-Path $payload '*') -Destination $tempTarget -Recurse -Force;Move-Item -LiteralPath $tempTarget -Destination $target}catch{Remove-Item -LiteralPath $tempTarget -Recurse -Force -ErrorAction SilentlyContinue;throw}
   }
   foreach($name in @('SIDES.vbs','Run-SIDES.ps1','Atualizar-SIDES.vbs','Update-SIDES.ps1','Rollback-SIDES.vbs','Rollback-SIDES.ps1','Desinstalar-SIDES.ps1','CONFIGURAR-VOZ-OFFLINE.ps1','CONFIGURAR-GRAMATICA-LOCAL.ps1')){Copy-Item -LiteralPath (Join-Path $PackageRoot ('launcher\'+$name)) -Destination (Join-Path $InstallRoot $name) -Force}
+  # Alias de entrada com a marca atual; os nomes SIDES-* acima permanecem apenas como compatibilidade interna.
+  Copy-Item -LiteralPath (Join-Path $PackageRoot 'launcher\SIDES.vbs') -Destination (Join-Path $InstallRoot 'CURESP.vbs') -Force
 
   $previous=$null;if($oldState -and $oldState.current -and ([string]$oldState.current -ne ('versions\'+$version))){$previous=[string]$oldState.current}elseif($oldState -and $oldState.previous){$previous=[string]$oldState.previous}
   $installedAt=if($oldState -and $oldState.installedAt){[string]$oldState.installedAt}else{(Get-Date).ToUniversalTime().ToString('o')}
@@ -78,16 +81,16 @@ try{
 
   if(-not $NoShortcuts){
     $wscript=Join-Path $env:WINDIR 'System32\wscript.exe';$desktop=[Environment]::GetFolderPath('Desktop');$programs=[Environment]::GetFolderPath('Programs')
-    New-Shortcut (Join-Path $desktop 'SIDES.lnk') $wscript ('"'+(Join-Path $InstallRoot 'SIDES.vbs')+'"') $InstallRoot;$menuDir=Join-Path $programs 'SIDES'
-    New-Shortcut (Join-Path $menuDir 'SIDES.lnk') $wscript ('"'+(Join-Path $InstallRoot 'SIDES.vbs')+'"') $InstallRoot
-    New-Shortcut (Join-Path $menuDir 'Atualizar SIDES.lnk') $wscript ('"'+(Join-Path $InstallRoot 'Atualizar-SIDES.vbs')+'"') $InstallRoot
+    New-Shortcut (Join-Path $desktop 'CURESP.lnk') $wscript ('"'+(Join-Path $InstallRoot 'CURESP.vbs')+'"') $InstallRoot;$menuDir=Join-Path $programs 'CURESP'
+    New-Shortcut (Join-Path $menuDir 'CURESP.lnk') $wscript ('"'+(Join-Path $InstallRoot 'CURESP.vbs')+'"') $InstallRoot
+    New-Shortcut (Join-Path $menuDir 'Atualizar CURESP.lnk') $wscript ('"'+(Join-Path $InstallRoot 'Atualizar-SIDES.vbs')+'"') $InstallRoot
     New-Shortcut (Join-Path $menuDir 'Restaurar versao anterior.lnk') $wscript ('"'+(Join-Path $InstallRoot 'Rollback-SIDES.vbs')+'"') $InstallRoot
     $powershell=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
     New-Shortcut (Join-Path $menuDir 'Configurar voz offline.lnk') $powershell ('-NoProfile -ExecutionPolicy Bypass -File "'+(Join-Path $InstallRoot 'CONFIGURAR-VOZ-OFFLINE.ps1')+'"') $InstallRoot
     New-Shortcut (Join-Path $menuDir 'Configurar gramatica local.lnk') $powershell ('-NoProfile -ExecutionPolicy Bypass -File "'+(Join-Path $InstallRoot 'CONFIGURAR-GRAMATICA-LOCAL.ps1')+'"') $InstallRoot
-    New-Shortcut (Join-Path $menuDir 'Desinstalar SIDES.lnk') $powershell ('-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "'+(Join-Path $InstallRoot 'Desinstalar-SIDES.ps1')+'"') $InstallRoot
+    New-Shortcut (Join-Path $menuDir 'Desinstalar CURESP.lnk') $powershell ('-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "'+(Join-Path $InstallRoot 'Desinstalar-SIDES.ps1')+'"') $InstallRoot
   }
-  if(-not $NoLaunch){$wscript=Join-Path $env:WINDIR 'System32\wscript.exe';Start-Process -FilePath $wscript -ArgumentList ('"'+(Join-Path $InstallRoot 'SIDES.vbs')+'"') -WorkingDirectory $InstallRoot|Out-Null}
-  Show-Message "SIDES $version instalado com sucesso.`n`nAplicacao: $target`nDados preservados em: $DataDir" 'SIDES instalado' 'Information'
-  Write-Output "SIDES_INSTALL_OK version=$version root=$InstallRoot data=$DataDir";exit 0
-}catch{$message=$_.Exception.Message;Show-Message "Nao foi possivel instalar o SIDES.`n`n$message" 'Falha na instalacao' 'Error';Write-Error $message;exit 1}
+  if(-not $NoLaunch){$wscript=Join-Path $env:WINDIR 'System32\wscript.exe';Start-Process -FilePath $wscript -ArgumentList ('"'+(Join-Path $InstallRoot 'CURESP.vbs')+'"') -WorkingDirectory $InstallRoot|Out-Null}
+  Show-Message "CURESP $version instalado com sucesso.`n`nAplicacao: $target`nDados preservados em: $DataDir" 'CURESP instalado' 'Information'
+  Write-Output "CURESP_INSTALL_OK version=$version root=$InstallRoot data=$DataDir";exit 0
+}catch{$message=$_.Exception.Message;Show-Message "Nao foi possivel instalar o CURESP.`n`n$message" 'Falha na instalacao' 'Error';Write-Error $message;exit 1}
