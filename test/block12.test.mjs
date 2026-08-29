@@ -91,8 +91,8 @@ test('Windows build recipe embeds Node licenses and dependency but never package
   assert.match(build,/\.sha256/);assert.equal(/Copy-Item[^\n]+['"]data['"]/i.test(build),false);
 });
 
-test('Block 12 remains compatible when application version reaches 1.0.0',async()=>{
-  const pkg=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8'));assert.equal(pkg.version,'1.0.0');
+test('Block 12 remains compatible across CURESP 1.x application versions',async()=>{
+  const pkg=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8'));assert.match(pkg.version,/^1\.\d+\.\d+$/);
   const db=openDatabase(':memory:');assert.equal(db.prepare("SELECT value FROM meta WHERE key='schemaVersion'").get().value,'SIDES-DB-V10');
   const server=createSidesServer({db});await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve)});
   try{const health=await fetch(`http://127.0.0.1:${server.address().port}/api/health`).then(r=>r.json());assert.equal(health.schema,'SIDES-API-V9');}

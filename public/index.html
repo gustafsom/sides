@@ -12,6 +12,18 @@
     <div><strong>CURESP</strong><span>Curso de Espanhol · imersão e desenvolvimento adaptativo</span></div>
     <button id="exportBtn" class="ghost">Backup JSON</button>
   </header>
+
+  <nav class="moduleNav" aria-label="Navegação principal do CURESP">
+    <a href="/" aria-current="page">Hoje</a>
+    <a href="#dailyTrail">Trilha de hoje</a>
+    <a href="/immersion.html">Imersão</a>
+    <a href="/speech.html">Fala</a>
+    <a href="/writing.html">Escrita</a>
+    <a href="/assignments.html">Designações</a>
+    <a href="/jw.html">Trilha JW</a>
+    <a href="/integrity.html">Dados e backup</a>
+  </nav>
+
   <main>
     <section id="placementBanner" class="banner hidden">
       <div><strong>Diagnóstico inicial</strong><p>Calibre seu nível antes de começar o plano adaptativo.</p></div>
@@ -21,12 +33,16 @@
     <section id="dashboardView" class="view">
       <div class="hero">
         <div><span class="eyebrow">Hoje</span><h1>Estude o que mais melhora seu espanhol.</h1><p id="heroText">Carregando seu plano...</p></div>
-        <button id="startSession">Começar sessão</button>
+        <button id="startSession">Começar trilha de hoje</button>
       </div>
       <div class="stats" id="stats"></div>
 
-      <section class="card progressCard">
-        <div class="sectionTitle"><div><span class="eyebrow">Planejador diário</span><h2>Seu treino de hoje</h2></div><a href="/planner.html">Configurar metas →</a></div>
+      <section id="dailyTrail" class="card progressCard">
+        <div class="sectionTitle">
+          <div><span class="eyebrow">Trilha de hoje</span><h2>Um treino misto, guiado e adaptado ao seu progresso</h2></div>
+          <div class="sectionActions"><a href="/planner.html">Configurar metas →</a><button class="ghost" data-start-session>Iniciar trilha</button></div>
+        </div>
+        <p class="sub">O CURESP alterna vocabulário, frases, contraste com o português, gramática, escuta e leitura. Ao concluir uma atividade, ele conduz automaticamente ao próximo tipo para evitar repetição cansativa.</p>
         <div id="plannerSummary"><p class="sub">Calculando retenção, prioridades e metas...</p></div>
       </section>
 
@@ -37,7 +53,7 @@
 
       <div class="grid two">
         <section class="card"><h2>Missão diária</h2><div id="quest"></div></section>
-        <section class="card"><h2>Treino rápido</h2><div class="quick">
+        <section class="card"><h2>Treino rápido</h2><p class="sub">Use estes atalhos quando quiser praticar uma habilidade específica. Para um estudo equilibrado, prefira a Trilha de hoje.</p><div class="quick">
           <button data-view="vocabulary">Vocabulário</button><button data-view="chunk">Frases / chunks</button>
           <button data-view="contrast">Português × espanhol</button><button data-view="grammar">Gramática</button>
           <button data-view="listening">Escuta</button><button data-view="reading">Leitura</button>
@@ -65,7 +81,7 @@
       <div class="grid two"><section class="card"><h2>Atividade · últimos 30 dias</h2><div id="activityChart" class="activityChart"></div><p id="activityNote" class="footerNote"></p></section><section class="card"><h2>Desempenho por habilidade</h2><div id="modePerformance"></div></section></div>
       <div class="grid two"><section class="card"><h2>Saúde das revisões</h2><div id="srsHealth"></div></section><section class="card"><h2>Padrões de erro</h2><div id="errorBreakdown"></div></section></div>
 
-      <section class="card progressCard"><div class="sectionTitle"><div><span class="eyebrow">Currículo A1–B2</span><h2>Mapa de cobertura e progressão</h2></div><span class="trendBadge neutral">Bloco 5.1 · expandido</span></div><div id="curriculumMap"><p class="sub">Carregando currículo...</p></div></section>
+      <section class="card progressCard"><div class="sectionTitle"><div><span class="eyebrow">Currículo A1–B2</span><h2>Mapa de cobertura e progressão</h2></div><span class="trendBadge neutral">Currículo expandido</span></div><div id="curriculumMap"><p class="sub">Carregando currículo...</p></div></section>
 
       <section class="card"><h2>Trilha JW</h2><p class="sub">Espanhol para leitura bíblica, comentários, reuniões e discursos, com conteúdo oficial aberto no JW.org/JW Library.</p><p><a href="/jw.html">Abrir Trilha JW →</a> · <a href="/assignments.html">Minhas designações →</a> · <a href="/speech.html">Fala offline →</a> · <a href="/writing.html">Escrita inteligente →</a> · <a href="/immersion.html">Imersão →</a></p></section>
       <section class="card"><h2>Conquistas</h2><div id="achievements" class="principles"></div></section>
@@ -74,7 +90,18 @@
       <section class="card"><h2>Como o CURESP aprende com você</h2><div class="principles"><span>Recuperação ativa</span><span>FSRS</span><span>Interleaving</span><span>Feedback explicativo</span><span>Contraste português ↔ espanhol</span><span>Produção ativa</span><span>Reescrita deliberada</span><span>Imersão contextual</span><span>Planejamento adaptativo</span></div></section>
     </section>
 
-    <section id="practiceView" class="view hidden"><div class="practiceHead"><button id="backBtn" class="ghost">← Painel</button><div><span id="modeLabel" class="eyebrow"></span><h1 id="practiceTitle"></h1></div><span id="xpToast"></span></div><section id="practiceCard" class="practice card"></section></section>
+    <section id="practiceView" class="view hidden">
+      <div class="practiceHead">
+        <button id="backBtn" class="ghost">← Painel</button>
+        <div>
+          <span id="modeLabel" class="eyebrow"></span>
+          <h1 id="practiceTitle"></h1>
+          <div id="trailProgress" class="trailProgress hidden" aria-live="polite"><div class="trailProgressBar"><i id="trailProgressFill"></i></div><span id="trailProgressText"></span></div>
+        </div>
+        <span id="xpToast"></span>
+      </div>
+      <section id="practiceCard" class="practice card"></section>
+    </section>
   </main>
   <script type="module" src="/app.js"></script>
   <script type="module" src="/curriculum.js"></script>
