@@ -16,6 +16,7 @@ Todas as mudanças relevantes do CURESP são registradas neste arquivo a partir 
 - orientação visível para ativar a voz offline pelo Menu Iniciar e fallback por texto enquanto o Whisper não estiver pronto;
 - configuração do Whisper atualizada para a marca CURESP, com verificação do modelo e reinício automático da instalação Windows;
 - Fala offline agora explica a configuração necessária, diferencia erros de permissão/dispositivo e evita tentar análise automática sem Whisper;
+- encerramento da gravação corrigido para preservar o tipo MIME até o evento assíncrono `onstop`, evitando erro ao clicar em Parar na Imersão e na Fala offline;
 - textos visíveis restantes atualizados para a identidade CURESP.
 
 ### Compatibilidade
