@@ -16,7 +16,7 @@ requireText('README.md','CURESP 1.0.0');
 requireText('README.md','SIDES-DB-V10');
 requireText('README.md','IDs internos');
 requireText('docs/ROADMAP.md','Bloco 13 — Qualidade, segurança, SISDEV e Release 1.0 ✅');
-requireText('CHANGELOG.md','## [1.0.0] - 2026-08-28');
+requireText('CHANGELOG.md','## [1.0.0] - 2026-08-29');
 requireText('THIRD_PARTY_NOTICES.md','ts-fsrs 5.4.1');
 requireText('THIRD_PARTY_NOTICES.md','Node.js');
 requireText('SECURITY.md','Versões suportadas');
