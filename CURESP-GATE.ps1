@@ -29,7 +29,7 @@ try{
   $version=(& $node.Source -p 'process.versions.node').Trim().Split('.')
   if(([int]$version[0] -lt 22) -or (([int]$version[0] -eq 22) -and ([int]$version[1] -lt 13))){throw 'NODE_TOO_OLD'}
   if(-not (Test-Path (Join-Path $Root 'node_modules\ts-fsrs\package.json'))){
-    & npm install --ignore-scripts --no-audit --no-fund;if($LASTEXITCODE -ne 0){throw 'NPM_INSTALL_FAILED'}
+    & npm install --package-lock=false --ignore-scripts --no-audit --no-fund;if($LASTEXITCODE -ne 0){throw 'NPM_INSTALL_FAILED'}
   }
   & npm run check;if($LASTEXITCODE -ne 0){throw 'TEST_GATE_FAILED'};$checks.tests=$true
   & npm run security:check;if($LASTEXITCODE -ne 0){throw 'SECURITY_GATE_FAILED'};$checks.security=$true
@@ -39,6 +39,9 @@ try{
     & (Join-Path $Root 'BUILD-WINDOWS-PACKAGE.ps1') -OutputDir $BuildRoot
     if($LASTEXITCODE -ne 0){throw 'WINDOWS_PACKAGE_GATE_FAILED'};$checks.windowsPackage=$true
   }else{throw 'WINDOWS_LOCAL_GATE_REQUIRED'}
+
+  $dirtyAfter=(& $git.Source status --porcelain | Out-String).Trim()
+  if($dirtyAfter){throw 'WORKTREE_DIRTY_AFTER_GATE'}
 
   Write-SafeResult $true 'PASS'
   Write-Host "CURESP gate aprovado para o SHA exato $ExactSha" -ForegroundColor Green
