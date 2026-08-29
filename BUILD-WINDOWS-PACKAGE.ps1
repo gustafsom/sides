@@ -57,8 +57,28 @@ foreach($candidate in @('LICENSE','LICENSE.txt','LICENSE.md')){
   $p=Join-Path $nodeDir $candidate
   if(Test-Path -LiteralPath $p -PathType Leaf){$nodeLicense=$p;break}
 }
-if(-not $nodeLicense){Fail 'NODE_LICENSE_MISSING'}
-Copy-Item -LiteralPath $nodeLicense -Destination (Join-Path $payload 'runtime\NODE-LICENSE.txt')
+
+$nodeLicenseTemp=$null
+try{
+  if(-not $nodeLicense){
+    if($nodeVersion -notmatch '^\d+\.\d+\.\d+$'){Fail "NODE_VERSION_INVALID_FOR_LICENSE:$nodeVersion"}
+    $nodeLicenseTemp=Join-Path ([IO.Path]::GetTempPath()) ("curesp-node-license-$nodeVersion-"+[guid]::NewGuid().ToString('N')+'.txt')
+    $licenseUri="https://raw.githubusercontent.com/nodejs/node/v$nodeVersion/LICENSE"
+    [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
+    try{
+      Invoke-WebRequest -Uri $licenseUri -OutFile $nodeLicenseTemp -UseBasicParsing -TimeoutSec 30
+    }catch{
+      Fail "NODE_LICENSE_UNAVAILABLE:${nodeVersion}:$($_.Exception.Message)"
+    }
+    if(-not (Test-Path -LiteralPath $nodeLicenseTemp -PathType Leaf)){Fail "NODE_LICENSE_DOWNLOAD_MISSING:$nodeVersion"}
+    $licenseText=Get-Content -LiteralPath $nodeLicenseTemp -Raw
+    if(($licenseText.Length -lt 1000) -or ($licenseText -notmatch '^Node\.js is licensed for use as follows:')){Fail "NODE_LICENSE_DOWNLOAD_INVALID:$nodeVersion"}
+    $nodeLicense=$nodeLicenseTemp
+  }
+  Copy-Item -LiteralPath $nodeLicense -Destination (Join-Path $payload 'runtime\NODE-LICENSE.txt')
+}finally{
+  if($nodeLicenseTemp){Remove-Item -LiteralPath $nodeLicenseTemp -Force -ErrorAction SilentlyContinue}
+}
 
 # O instalador interno mantém o nome legado para compatibilidade com testes/update da 1.0,
 # enquanto CURESP é a entrada oficial exibida ao usuário.
