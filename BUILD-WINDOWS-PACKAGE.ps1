@@ -24,7 +24,7 @@ if($version -notmatch '^\d+\.\d+\.\d+$'){Fail "PACKAGE_VERSION_INVALID:$version"
 if(-not (Test-Path -LiteralPath (Join-Path $Root 'node_modules\ts-fsrs\package.json'))){
   $npm=Get-Command npm -ErrorAction SilentlyContinue
   if(-not $npm){Fail 'NPM_REQUIRED_FOR_BUILD_DEPENDENCIES'}
-  & npm install --ignore-scripts --no-audit --no-fund
+  & npm install --package-lock=false --ignore-scripts --no-audit --no-fund
   if($LASTEXITCODE -ne 0){Fail 'NPM_INSTALL_FAILED'}
 }
 
