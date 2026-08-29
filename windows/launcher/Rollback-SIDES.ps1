@@ -3,12 +3,12 @@ $ErrorActionPreference='Stop'
 $InstallRoot=Split-Path -Parent $MyInvocation.MyCommand.Path
 $statePath=Join-Path $InstallRoot 'install-state.json'
 
-function Show-Message([string]$Text,[string]$Title='SIDES',[string]$Icon='Information'){
+function Show-Message([string]$Text,[string]$Title='CURESP',[string]$Icon='Information'){
   try{Add-Type -AssemblyName PresentationFramework -ErrorAction Stop;[System.Windows.MessageBox]::Show($Text,$Title,'OK',$Icon)|Out-Null}catch{Write-Host $Text}
 }
 function Confirm-Rollback([string]$From,[string]$To){
   if($Force){return $true}
-  try{Add-Type -AssemblyName PresentationFramework -ErrorAction Stop;return ([System.Windows.MessageBox]::Show("Restaurar a versão anterior do SIDES?`n`nAtual: $From`nAnterior: $To`n`nSeus dados de estudo não serão alterados.",'SIDES - Restaurar versão','YesNo','Question') -eq 'Yes')}catch{return $false}
+  try{Add-Type -AssemblyName PresentationFramework -ErrorAction Stop;return ([System.Windows.MessageBox]::Show("Restaurar a versão anterior do CURESP?`n`nAtual: $From`nAnterior: $To`n`nSeus dados de estudo não serão alterados.",'CURESP - Restaurar versão','YesNo','Question') -eq 'Yes')}catch{return $false}
 }
 function Write-State([string]$Path,$State){
   $tmp="$Path.tmp";$State|ConvertTo-Json -Depth 5|Set-Content -LiteralPath $tmp -Encoding UTF8;Move-Item -LiteralPath $tmp -Destination $Path -Force
@@ -42,8 +42,8 @@ try{
   }
   Write-State $statePath $new
   if(-not $NoLaunch){
-    $wscript=Join-Path $env:WINDIR 'System32\wscript.exe';Start-Process -FilePath $wscript -ArgumentList ('"'+(Join-Path $InstallRoot 'SIDES.vbs')+'"') -WorkingDirectory $InstallRoot|Out-Null
+    $wscript=Join-Path $env:WINDIR 'System32\wscript.exe';$launcher=Join-Path $InstallRoot 'CURESP.vbs';if(-not (Test-Path -LiteralPath $launcher)){$launcher=Join-Path $InstallRoot 'SIDES.vbs'};Start-Process -FilePath $wscript -ArgumentList ('"'+$launcher+'"') -WorkingDirectory $InstallRoot|Out-Null
   }
-  Show-Message "SIDES restaurado para a versão $previousVersion.`n`nA pasta de dados não foi modificada." 'Rollback concluído' 'Information'
-  Write-Output "SIDES_ROLLBACK_OK version=$previousVersion"
-}catch{Show-Message ("Não foi possível restaurar a versão anterior.`n`n"+$_.Exception.Message) 'Falha no rollback' 'Error';Write-Error $_.Exception.Message;exit 1}
+  Show-Message "CURESP restaurado para a versão $previousVersion.`n`nA pasta de dados não foi modificada." 'Rollback concluído' 'Information'
+  Write-Output "CURESP_ROLLBACK_OK version=$previousVersion"
+}catch{Show-Message ("Não foi possível restaurar a versão anterior do CURESP.`n`n"+$_.Exception.Message) 'Falha no rollback' 'Error';Write-Error $_.Exception.Message;exit 1}

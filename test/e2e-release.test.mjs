@@ -17,7 +17,7 @@ async function getJson(base,path){
   const response=await fetch(base+path);const json=await response.json();return {response,json};
 }
 
-test('release E2E serves UI and core modules through loopback with hardened headers',async()=>withServer(async({base})=>{
+test('release E2E serves CURESP UI and core modules through loopback with hardened headers',async()=>withServer(async({base})=>{
   const home=await fetch(base+'/');
   assert.equal(home.status,200);
   assert.match(home.headers.get('content-security-policy')||'',/default-src 'self'/);
@@ -26,8 +26,9 @@ test('release E2E serves UI and core modules through loopback with hardened head
   assert.equal(home.headers.get('x-content-type-options'),'nosniff');
   assert.equal(home.headers.get('referrer-policy'),'no-referrer');
   assert.equal(home.headers.get('access-control-allow-origin'),null);
-  assert.match(await home.text(),/SIDES/i);
+  const html=await home.text();assert.match(html,/CURESP/i);assert.doesNotMatch(html,/\bSIDES\b/i);
 
+  // app/schema continuam como IDs internos legados da API 1.0 para compatibilidade.
   const health=await getJson(base,'/api/health');
   assert.equal(health.response.status,200);assert.equal(health.json.app,'SIDES');assert.equal(health.json.schema,'SIDES-API-V9');
 

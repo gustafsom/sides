@@ -30,8 +30,8 @@ if(-not (Test-Path -LiteralPath (Join-Path $Root 'node_modules\ts-fsrs\package.j
 
 $out=[IO.Path]::GetFullPath((Join-Path $Root $OutputDir))
 New-Item -ItemType Directory -Path $out -Force | Out-Null
-$stage=Join-Path $out ("SIDES-$version-windows-x64-stage")
-$zip=Join-Path $out ("SIDES-$version-windows-x64.zip")
+$stage=Join-Path $out ("CURESP-$version-windows-x64-stage")
+$zip=Join-Path $out ("CURESP-$version-windows-x64.zip")
 $zipSha=$zip+'.sha256'
 Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath $zip,$zipSha -Force -ErrorAction SilentlyContinue
@@ -56,8 +56,12 @@ foreach($candidate in @('LICENSE','LICENSE.txt','LICENSE.md')){
 if(-not $nodeLicense){Fail 'NODE_LICENSE_MISSING'}
 Copy-Item -LiteralPath $nodeLicense -Destination (Join-Path $payload 'runtime\NODE-LICENSE.txt')
 
+# O instalador interno mantém o nome legado para compatibilidade com testes/update da 1.0,
+# enquanto CURESP é a entrada oficial exibida ao usuário.
 Copy-Item -LiteralPath (Join-Path $Root 'windows\INSTALAR-SIDES.ps1') -Destination (Join-Path $stage 'INSTALAR-SIDES.ps1')
+Copy-Item -LiteralPath (Join-Path $Root 'windows\INSTALAR-SIDES.ps1') -Destination (Join-Path $stage 'INSTALAR-CURESP.ps1')
 Copy-Item -LiteralPath (Join-Path $Root 'windows\INSTALAR-SIDES.vbs') -Destination (Join-Path $stage 'INSTALAR-SIDES.vbs')
+Copy-Item -LiteralPath (Join-Path $Root 'windows\INSTALAR-CURESP.vbs') -Destination (Join-Path $stage 'INSTALAR-CURESP.vbs')
 Copy-Item -LiteralPath (Join-Path $Root 'windows\launcher') -Destination (Join-Path $stage 'launcher') -Recurse
 Copy-Item -LiteralPath (Join-Path $Root 'CONFIGURAR-VOZ-OFFLINE.ps1') -Destination (Join-Path $stage 'launcher\CONFIGURAR-VOZ-OFFLINE.ps1')
 Copy-Item -LiteralPath (Join-Path $Root 'CONFIGURAR-GRAMATICA-LOCAL.ps1') -Destination (Join-Path $stage 'launcher\CONFIGURAR-GRAMATICA-LOCAL.ps1')
@@ -69,8 +73,8 @@ Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -Compression
 $hash=(Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
 Set-Content -LiteralPath $zipSha -Value ("$hash *"+[IO.Path]::GetFileName($zip)) -Encoding ASCII
 
-Write-Host "Pacote SIDES Windows criado." -ForegroundColor Green
+Write-Host "Pacote CURESP Windows criado." -ForegroundColor Green
 Write-Host "Versao: $version | Node portatil: $nodeVersion" -ForegroundColor DarkGray
 Write-Host "ZIP: $zip" -ForegroundColor Cyan
 Write-Host "SHA-256: $hash" -ForegroundColor Cyan
-Write-Output "SIDES_PACKAGE_OK zip=$zip sha256=$hash version=$version"
+Write-Output "CURESP_PACKAGE_OK zip=$zip sha256=$hash version=$version"

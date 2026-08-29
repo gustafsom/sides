@@ -1,9 +1,9 @@
 {
-  "name": "sides",
+  "name": "curesp",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "SIDES - Sistema de Imersao e Desenvolvimento em Espanhol",
+  "description": "CURESP - Curso de Espanhol: imersao, pratica ativa e desenvolvimento adaptativo",
   "engines": {
     "node": ">=22.13.0"
   },

@@ -3,14 +3,14 @@ $ErrorActionPreference='Stop'
 $InstallRoot=Split-Path -Parent $MyInvocation.MyCommand.Path
 $statePath=Join-Path $InstallRoot 'install-state.json'
 
-function Show-Message([string]$Text,[string]$Title='SIDES',[string]$Icon='Information'){
+function Show-Message([string]$Text,[string]$Title='CURESP',[string]$Icon='Information'){
   try{Add-Type -AssemblyName PresentationFramework -ErrorAction Stop;[System.Windows.MessageBox]::Show($Text,$Title,'OK',$Icon)|Out-Null}catch{Write-Host $Text}
 }
 function Select-Package{
   Add-Type -AssemblyName System.Windows.Forms
   $dialog=New-Object System.Windows.Forms.OpenFileDialog
-  $dialog.Title='Selecione o pacote de atualizacao do SIDES'
-  $dialog.Filter='Pacote SIDES (*.zip)|*.zip'
+  $dialog.Title='Selecione o pacote de atualizacao do CURESP'
+  $dialog.Filter='Pacote CURESP (*.zip)|*.zip'
   $dialog.Multiselect=$false
   if($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK){return $dialog.FileName}
   return ''
@@ -31,11 +31,12 @@ try{
   $actual=(Get-FileHash -LiteralPath $PackageZip -Algorithm SHA256).Hash.ToLowerInvariant()
   if($declared -notmatch '^[a-f0-9]{64}$' -or $declared -ne $actual){throw 'UPDATE_PACKAGE_CHECKSUM_MISMATCH'}
 
-  $temp=Join-Path ([IO.Path]::GetTempPath()) ('SIDES-update-'+[Guid]::NewGuid().ToString('N'))
+  $temp=Join-Path ([IO.Path]::GetTempPath()) ('CURESP-update-'+[Guid]::NewGuid().ToString('N'))
   New-Item -ItemType Directory -Path $temp -Force | Out-Null
   try{
     Expand-Archive -LiteralPath $PackageZip -DestinationPath $temp -Force
-    $installer=Join-Path $temp 'INSTALAR-SIDES.ps1'
+    $installer=Join-Path $temp 'INSTALAR-CURESP.ps1'
+    if(-not (Test-Path -LiteralPath $installer)){$installer=Join-Path $temp 'INSTALAR-SIDES.ps1'}
     $manifestPath=Join-Path $temp 'package-manifest.json'
     if(-not (Test-Path -LiteralPath $installer) -or -not (Test-Path -LiteralPath $manifestPath)){throw 'UPDATE_PACKAGE_LAYOUT_INVALID'}
     $manifest=Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
@@ -56,10 +57,11 @@ try{
       }catch{}
     }
     $wscript=Join-Path $env:WINDIR 'System32\wscript.exe'
-    Start-Process -FilePath $wscript -ArgumentList ('"'+(Join-Path $InstallRoot 'SIDES.vbs')+'"') -WorkingDirectory $InstallRoot | Out-Null
-    Show-Message "SIDES atualizado de $current para $incoming.`n`nOs dados permaneceram em sua pasta local e nao foram substituidos." 'SIDES atualizado' 'Information'
+    $launcher=Join-Path $InstallRoot 'CURESP.vbs';if(-not (Test-Path -LiteralPath $launcher)){$launcher=Join-Path $InstallRoot 'SIDES.vbs'}
+    Start-Process -FilePath $wscript -ArgumentList ('"'+$launcher+'"') -WorkingDirectory $InstallRoot | Out-Null
+    Show-Message "CURESP atualizado de $current para $incoming.`n`nOs dados permaneceram em sua pasta local e nao foram substituidos." 'CURESP atualizado' 'Information'
   }finally{Remove-Item -LiteralPath $temp -Recurse -Force -ErrorAction SilentlyContinue}
 }catch{
-  Show-Message ("A atualizacao nao foi aplicada.`n`n"+$_.Exception.Message) 'Falha na atualizacao' 'Error'
+  Show-Message ("A atualizacao do CURESP nao foi aplicada.`n`n"+$_.Exception.Message) 'Falha na atualizacao' 'Error'
   exit 1
 }

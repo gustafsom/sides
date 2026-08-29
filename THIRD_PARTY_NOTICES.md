@@ -1,11 +1,11 @@
-# SIDES — Third-party notices
+# CURESP — Third-party notices
 
-Este arquivo registra os componentes de terceiros relevantes para a distribuição do SIDES 1.0.0. Ele não substitui os textos de licença distribuídos pelos próprios projetos.
+Este arquivo registra os componentes de terceiros relevantes para a distribuição do CURESP 1.0.0. Ele não substitui os textos de licença distribuídos pelos próprios projetos.
 
 ## Incluídos no pacote Windows
 
 ### Node.js 24.x
-- Uso: runtime local do SIDES.
+- Uso: runtime local do CURESP.
 - Distribuição: `payload/runtime/node.exe`.
 - Licença: licença do projeto Node.js e licenças/avisos dos componentes incorporados pelo runtime.
 - O build da versão 1.0 exige e inclui a licença completa do runtime como `payload/runtime/NODE-LICENSE.txt`.
@@ -22,21 +22,21 @@ Este arquivo registra os componentes de terceiros relevantes para a distribuiç�
 ### whisper.cpp
 - Uso: transcrição de fala inteiramente local.
 - Licença do software: MIT.
-- O SIDES não redistribui o binário nem o modelo; o configurador opcional baixa o componente separadamente após ação explícita do usuário e valida checksum.
+- O CURESP não redistribui o binário nem o modelo; o configurador opcional baixa o componente separadamente após ação explícita do usuário e valida checksum.
 
 ### LanguageTool 6.6
 - Uso: revisão gramatical local opcional.
 - Licença do core: GNU LGPL 2.1; recursos podem ter licenças próprias.
-- O SIDES não redistribui o ZIP/JAR. O configurador opcional baixa a distribuição separadamente, e o endpoint remoto público é bloqueado pelo SIDES.
+- O CURESP não redistribui o ZIP/JAR. O configurador opcional baixa a distribuição separadamente, e o endpoint remoto público é bloqueado pelo backend.
 
 ### Piper
 - Uso: síntese de voz local opcional.
 - Projeto atual de referência: Piper sob GPL-3.0.
-- Nenhum binário, pacote Python ou modelo de voz Piper é redistribuído pelo SIDES 1.0.0. Uma voz/modelo só deve ser usada após verificação da licença específica.
+- Nenhum binário, pacote Python ou modelo de voz Piper é redistribuído pelo CURESP 1.0.0. Uma voz/modelo só deve ser usada após verificação da licença específica.
 
 ## Componentes do sistema operacional
 
-O SIDES pode usar recursos já fornecidos pelo navegador/Windows, como `SpeechSynthesis`, PowerShell, WScript e APIs do sistema. Esses componentes não são redistribuídos pelo pacote do SIDES.
+O CURESP pode usar recursos já fornecidos pelo navegador/Windows, como `SpeechSynthesis`, PowerShell, WScript e APIs do sistema. Esses componentes não são redistribuídos pelo pacote do CURESP.
 
 ## Regra de release
 

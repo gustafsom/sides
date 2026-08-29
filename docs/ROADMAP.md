@@ -1,6 +1,6 @@
-# Roadmap do SIDES
+# Roadmap do CURESP
 
-Os blocos têm entrega funcional independente. A linha de chegada definida é o **SIDES 1.0.0 no Bloco 13**; ideias adicionais que não sejam necessárias para a 1.0 entram no backlog pós-1.0.
+Os blocos têm entrega funcional independente. A linha de chegada definida é o **CURESP 1.0.0 no Bloco 13**; ideias adicionais que não sejam necessárias para a 1.0 entram no backlog pós-1.0. O nome SIDES, usado durante o desenvolvimento, permanece apenas em IDs técnicos legados quando necessário para compatibilidade.
 
 ## Bloco 1 — Fundação local ✅
 
@@ -81,7 +81,7 @@ Os blocos têm entrega funcional independente. A linha de chegada definida é o 
 
 - `/writing.html`;
 - 32 propostas A1–B2 + texto livre;
-- regras SIDES e LanguageTool local opcional;
+- regras locais do CURESP e LanguageTool local opcional;
 - endpoint remoto bloqueado;
 - classificação pedagógica de padrões;
 - reescrita e recuperação de dificuldades;
@@ -130,23 +130,23 @@ Os blocos têm entrega funcional independente. A linha de chegada definida é o 
 - restauração SQLite validada e preparada durante a sessão;
 - restauração aplicada apenas no próximo início, antes de abrir SQLite;
 - banco anterior/WAL/SHM preservados em `data/recovery/` durante a troca;
-- banco restaurado percorre novamente as migrações do SIDES;
+- banco restaurado percorre novamente as migrações do CURESP;
 - logs técnicos JSONL locais, sem conteúdo livre do usuário, com retenção padrão de 30 dias;
 - migração aditiva para `SIDES-DB-V10`;
 - API local `SIDES-API-V9`.
 
 ## Bloco 12 — Produto Windows instalável ✅
 
-- SIDES `0.12.0` empacotável para Windows x64;
+- produto então desenvolvido sob a identidade SIDES `0.12.0`, promovido a CURESP antes da primeira release;
 - `node.exe` portátil incluído no pacote e `ts-fsrs@5.4.1` embarcado;
-- instalação padrão em `%LOCALAPPDATA%\SIDES`;
+- instalação 1.0 padrão em `%LOCALAPPDATA%\CURESP`;
 - código versionado em `versions\<versão>` e dados persistentes fora das versões;
-- `SIDES_DATA_DIR` respeitado pelo banco, mantendo o modo fonte compatível com `data/sides.sqlite`;
+- `SIDES_DATA_DIR` preservado como ID técnico para compatibilidade com `data/sides.sqlite`;
 - inicialização por `wscript.exe`, sem janela de terminal;
-- validação de que a porta local pertence ao SIDES antes de reutilizá-la;
+- validação de que a porta local pertence ao processo esperado antes de reutilizá-la;
 - atalhos no Desktop e Menu Iniciar;
 - configuradores de Whisper e LanguageTool mantidos em caminho estável entre versões;
-- pacote `SIDES-WINDOWS-PACKAGE-V1` com SHA-256 por arquivo e checksum do manifesto;
+- protocolo interno `SIDES-WINDOWS-PACKAGE-V1` com SHA-256 por arquivo e checksum do manifesto;
 - ZIP acompanhado de SHA-256 externo;
 - atualização opt-in por pacote local, sem download automático de código;
 - atualização rejeita checksum inválido, pacote incompatível e versão não superior;
@@ -159,7 +159,7 @@ Os blocos têm entrega funcional independente. A linha de chegada definida é o 
 
 ## Bloco 13 — Qualidade, segurança, SISDEV e Release 1.0 ✅
 
-- versão promovida para **SIDES 1.0.0**;
+- versão promovida para **CURESP 1.0.0** antes da primeira release formal;
 - testes E2E HTTP de aceitação com headers defensivos e caminhos fail-closed;
 - migração legada V2 → V10 mantida no gate integral;
 - `scripts/security-audit.mjs` com allowlist de dependências, busca de secrets e invariantes local-first;
@@ -168,10 +168,10 @@ Os blocos têm entrega funcional independente. A linha de chegada definida é o 
 - build Windows falha se não puder incluir a licença integral da distribuição Node;
 - rollback operacional de aplicação usando `current`/`previous` sem alterar `dataDir`;
 - CI Windows instala o pacote real em diretório temporário e executa o runtime instalado;
-- `SISDEV-GATE.ps1` fail-closed, preso a SHA exato, working tree limpa e modo `READ_ONLY`;
-- resultado SISDEV sanitizado em `%USERPROFILE%\Downloads\SISDEV\RESULTADOS\sides`;
+- `CURESP-GATE.ps1` fail-closed, preso a SHA exato, working tree limpa e modo `READ_ONLY`;
+- resultado SISDEV sanitizado em `%USERPROFILE%\Downloads\SISDEV\RESULTADOS\curesp`;
 - changelog, roteiro de aceitação e documentação de release/rollback;
 - constatação registrada de que `main` está sem branch protection/ruleset em 2026-08-28;
 - processo de release exige PR, CI verde e `expected_head_sha` enquanto essa governança não for habilitada;
-- tag final `v1.0.0` reservada ao SHA que também passar o gate SISDEV local;
+- tag final `v1.0.0` reservada ao SHA que também passar o gate CURESP/SISDEV local;
 - backlog pós-1.0 separado do escopo dos 13 blocos.

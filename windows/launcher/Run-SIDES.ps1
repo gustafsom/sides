@@ -3,7 +3,7 @@ $InstallRoot=Split-Path -Parent $MyInvocation.MyCommand.Path
 $statePath=Join-Path $InstallRoot 'install-state.json'
 
 function Show-Error([string]$Text){
-  try{Add-Type -AssemblyName PresentationFramework -ErrorAction Stop;[System.Windows.MessageBox]::Show($Text,'SIDES','OK','Error')|Out-Null}catch{}
+  try{Add-Type -AssemblyName PresentationFramework -ErrorAction Stop;[System.Windows.MessageBox]::Show($Text,'CURESP','OK','Error')|Out-Null}catch{}
 }
 function Test-SidesHealth([string]$Url){
   try{
@@ -44,7 +44,7 @@ function Configure-OptionalEngines{
 }
 
 try{
-  if(-not (Test-Path -LiteralPath $statePath)){throw 'Instalacao do SIDES incompleta: install-state.json ausente.'}
+  if(-not (Test-Path -LiteralPath $statePath)){throw 'Instalacao do CURESP incompleta: install-state.json ausente.'}
   $state=Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
   if($state.schema -ne 'SIDES-INSTALL-V1'){throw 'Estado de instalacao incompativel.'}
   $current=Join-Path $InstallRoot ([string]$state.current)
@@ -61,6 +61,7 @@ try{
   if($occupied){throw "A porta local $port ja esta em uso por outro programa."}
 
   Configure-OptionalEngines
+  # SIDES_* sao IDs de runtime legados preservados por compatibilidade.
   $env:SIDES_PORT="$port"
   $env:SIDES_DATA_DIR=$dataDir
   $process=Start-Process -FilePath $node -ArgumentList ('"'+$server+'"') -WorkingDirectory $InstallRoot -WindowStyle Hidden -PassThru
@@ -72,10 +73,10 @@ try{
   }
   if(-not $ready){
     if(-not $process.HasExited){Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue}
-    throw 'O servidor local do SIDES nao iniciou corretamente.'
+    throw 'O servidor local do CURESP nao iniciou corretamente.'
   }
   Start-Process $url
 }catch{
-  Show-Error ("Nao foi possivel iniciar o SIDES.`n`n"+$_.Exception.Message)
+  Show-Error ("Nao foi possivel iniciar o CURESP.`n`n"+$_.Exception.Message)
   exit 1
 }

@@ -1,4 +1,4 @@
-name: SIDES CI
+name: CURESP CI
 
 on:
   pull_request:
@@ -62,6 +62,8 @@ jobs:
           $files = @(
             '.\BUILD-WINDOWS-PACKAGE.ps1',
             '.\SISDEV-GATE.ps1',
+            '.\CURESP-GATE.ps1',
+            '.\INICIAR-CURESP.ps1',
             '.\windows\INSTALAR-SIDES.ps1',
             '.\windows\launcher\Run-SIDES.ps1',
             '.\windows\launcher\Update-SIDES.ps1',
@@ -79,25 +81,28 @@ jobs:
       - name: Installed package smoke test
         shell: powershell
         run: |
-          $zip = Get-ChildItem .\dist\SIDES-*-windows-x64.zip | Select-Object -First 1
+          $zip = Get-ChildItem .\dist\CURESP-*-windows-x64.zip | Select-Object -First 1
           if (-not $zip) { throw 'PACKAGE_ZIP_MISSING' }
           $shaFile = $zip.FullName + '.sha256'
           $declared = ((Get-Content $shaFile -Raw).Trim() -split '\s+')[0].ToLowerInvariant()
           $actual = (Get-FileHash $zip.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($declared -ne $actual) { throw 'PACKAGE_ZIP_CHECKSUM_MISMATCH' }
 
-          $extract = Join-Path $env:RUNNER_TEMP 'sides-release-package'
-          $install = Join-Path $env:RUNNER_TEMP 'sides-release-install'
-          $data = Join-Path $env:RUNNER_TEMP 'sides-release-data'
+          $extract = Join-Path $env:RUNNER_TEMP 'curesp-release-package'
+          $install = Join-Path $env:RUNNER_TEMP 'curesp-release-install'
+          $data = Join-Path $env:RUNNER_TEMP 'curesp-release-data'
           Remove-Item $extract,$install,$data -Recurse -Force -ErrorAction SilentlyContinue
           Expand-Archive -LiteralPath $zip.FullName -DestinationPath $extract -Force
           node .\scripts\verify-windows-package.mjs $extract | Out-Null
 
-          & (Join-Path $extract 'INSTALAR-SIDES.ps1') -InstallRoot $install -DataDir $data -NoLaunch -NoShortcuts -Silent
+          if (-not (Test-Path (Join-Path $extract 'INSTALAR-CURESP.ps1'))) { throw 'CURESP_INSTALLER_MISSING' }
+          if (-not (Test-Path (Join-Path $extract 'INSTALAR-CURESP.vbs'))) { throw 'CURESP_VBS_INSTALLER_MISSING' }
+          & (Join-Path $extract 'INSTALAR-CURESP.ps1') -InstallRoot $install -DataDir $data -NoLaunch -NoShortcuts -Silent
           if ($LASTEXITCODE -ne 0) { throw 'WINDOWS_INSTALL_SMOKE_FAILED' }
           $state = Get-Content (Join-Path $install 'install-state.json') -Raw | ConvertFrom-Json
           if ($state.schema -ne 'SIDES-INSTALL-V1' -or $state.version -ne '1.0.0') { throw 'WINDOWS_INSTALL_STATE_INVALID' }
           if ([IO.Path]::GetFullPath([string]$state.dataDir) -ne [IO.Path]::GetFullPath($data)) { throw 'WINDOWS_DATA_DIR_CHANGED' }
+          if (-not (Test-Path (Join-Path $install 'CURESP.vbs'))) { throw 'CURESP_LAUNCHER_MISSING' }
           $current = Join-Path $install ([string]$state.current)
           if (-not (Test-Path (Join-Path $current 'runtime\NODE-LICENSE.txt'))) { throw 'NODE_LICENSE_NOT_INSTALLED' }
 
@@ -121,8 +126,8 @@ jobs:
         if: github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
-          name: SIDES-Windows-${{ github.sha }}
+          name: CURESP-Windows-${{ github.sha }}
           path: |
-            dist/SIDES-*-windows-x64.zip
-            dist/SIDES-*-windows-x64.zip.sha256
+            dist/CURESP-*-windows-x64.zip
+            dist/CURESP-*-windows-x64.zip.sha256
           retention-days: 30
