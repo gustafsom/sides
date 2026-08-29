@@ -103,6 +103,7 @@ jobs:
       - name: Installed package smoke test
         shell: powershell
         run: |
+          $expectedVersion = [string]((Get-Content .\package.json -Raw | ConvertFrom-Json).version)
           $zip = Get-ChildItem .\dist\CURESP-*-windows-x64.zip | Select-Object -First 1
           if (-not $zip) { throw 'PACKAGE_ZIP_MISSING' }
           $shaFile = $zip.FullName + '.sha256'
@@ -122,7 +123,7 @@ jobs:
           & (Join-Path $extract 'INSTALAR-CURESP.ps1') -InstallRoot $install -DataDir $data -NoLaunch -NoShortcuts -Silent
           if ($LASTEXITCODE -ne 0) { throw 'WINDOWS_INSTALL_SMOKE_FAILED' }
           $state = Get-Content (Join-Path $install 'install-state.json') -Raw | ConvertFrom-Json
-          if ($state.schema -ne 'SIDES-INSTALL-V1' -or $state.version -ne '1.0.0') { throw 'WINDOWS_INSTALL_STATE_INVALID' }
+          if ($state.schema -ne 'SIDES-INSTALL-V1' -or $state.version -ne $expectedVersion) { throw "WINDOWS_INSTALL_STATE_INVALID:$($state.version):$expectedVersion" }
           if ([IO.Path]::GetFullPath([string]$state.dataDir) -ne [IO.Path]::GetFullPath($data)) { throw 'WINDOWS_DATA_DIR_CHANGED' }
           if (-not (Test-Path (Join-Path $install 'CURESP.vbs'))) { throw 'CURESP_LAUNCHER_MISSING' }
           $current = Join-Path $install ([string]$state.current)
