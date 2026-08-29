@@ -1,6 +1,6 @@
 # Segurança e privacidade
 
-O SIDES é uma aplicação local-first. A versão estável atual é a **1.0.x**.
+O CURESP é uma aplicação local-first. A versão estável candidata é a **1.0.x**.
 
 ## Versões suportadas
 
@@ -22,6 +22,7 @@ Correções de segurança da linha estável devem incrementar SemVer e passar pe
 - LanguageTool remoto é bloqueado; Whisper/LanguageTool/Piper são opcionais e locais.
 - Atualizações Windows são opt-in e exigem checksum externo + manifesto interno.
 - Rollback de aplicação preserva a pasta de dados.
+- IDs técnicos históricos com prefixo `SIDES-` e variáveis `SIDES_*` podem permanecer exclusivamente como contratos internos de compatibilidade; a identidade oficial do produto é CURESP.
 
 ## Gate de segurança
 
@@ -34,11 +35,13 @@ npm run release:gate
 npm audit --omit=dev --audit-level=high
 ```
 
-O gate local SISDEV exige SHA Git completo e working tree limpa:
+O gate local CURESP/SISDEV exige SHA Git completo e working tree limpa:
 
 ```powershell
-.\SISDEV-GATE.ps1 -ExactSha <SHA-DE-40-CARACTERES>
+.\CURESP-GATE.ps1 -ExactSha <SHA-DE-40-CARACTERES>
 ```
+
+O resultado sanitizado é gravado em `%USERPROFILE%\Downloads\SISDEV\RESULTADOS\curesp\CURESP-GATE-safe.json`.
 
 Nenhum desses gates autoriza deploy, escrita remota ou execução arbitrária recebida de fora.
 
