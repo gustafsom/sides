@@ -46,7 +46,7 @@ jobs:
 
   windows-package:
     runs-on: windows-latest
-    timeout-minutes: 15
+    timeout-minutes: 18
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -75,6 +75,26 @@ jobs:
             [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file), [ref]$tokens, [ref]$errors) | Out-Null
             if ($errors.Count -gt 0) { $errors | Format-List | Out-String | Write-Error; exit 1 }
           }
+      - name: Verify Node license fallback without adjacent LICENSE
+        shell: powershell
+        run: |
+          $isolatedNodeDir = Join-Path $env:RUNNER_TEMP 'curesp-node-without-license'
+          $fallbackDist = Join-Path $env:RUNNER_TEMP 'curesp-license-fallback-dist'
+          Remove-Item $isolatedNodeDir,$fallbackDist -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path $isolatedNodeDir -Force | Out-Null
+          $sourceNode = (Get-Command node).Source
+          $isolatedNode = Join-Path $isolatedNodeDir 'node.exe'
+          Copy-Item -LiteralPath $sourceNode -Destination $isolatedNode
+          .\BUILD-WINDOWS-PACKAGE.ps1 -OutputDir $fallbackDist -NodePath $isolatedNode
+          $fallbackZip = Get-ChildItem $fallbackDist\CURESP-*-windows-x64.zip | Select-Object -First 1
+          if (-not $fallbackZip) { throw 'LICENSE_FALLBACK_PACKAGE_MISSING' }
+          $extract = Join-Path $env:RUNNER_TEMP 'curesp-license-fallback-extract'
+          Remove-Item $extract -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -LiteralPath $fallbackZip.FullName -DestinationPath $extract -Force
+          $license = Join-Path $extract 'payload\runtime\NODE-LICENSE.txt'
+          if (-not (Test-Path $license)) { throw 'LICENSE_FALLBACK_FILE_MISSING' }
+          $licenseText = Get-Content -LiteralPath $license -Raw
+          if (($licenseText.Length -lt 1000) -or ($licenseText -notmatch '^Node\.js is licensed for use as follows:')) { throw 'LICENSE_FALLBACK_FILE_INVALID' }
       - name: Build verified Windows package with absolute output path
         shell: powershell
         run: |
