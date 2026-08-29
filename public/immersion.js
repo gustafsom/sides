@@ -1,11 +1,20 @@
 const $=q=>document.querySelector(q);
 const safe=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const api=async(path,options={})=>{const r=await fetch(path,options);const data=await r.json();if(!r.ok)throw new Error(data.error||'Erro');return data};
-let current=null,planQueue=[],startedAt=0,mediaRecorder=null,chunks=[],timerId=null,voiceReady=false;
+let current=null,planQueue=[],startedAt=0,mediaRecorder=null,chunks=[],timerId=null,voiceReady=false,voiceRuntime=null;
 
 async function load(){
   const [overview,speech]=await Promise.all([api('/api/immersion/overview'),api('/api/speech/status')]);
-  voiceReady=Boolean(speech.whisper?.ready);$('#voiceStatus').textContent=`Whisper: ${voiceReady?'pronto':'opcional / não configurado'}`;renderOverview(overview);
+  voiceRuntime=speech.whisper||{};voiceReady=Boolean(voiceRuntime.ready);renderVoiceRuntime();renderOverview(overview);
+}
+function renderVoiceRuntime(){
+  const status=$('#voiceStatus'),setup=$('#voiceSetup'),record=$('#recordBtn');
+  if(voiceReady){
+    status.textContent='Voz offline: pronta';status.className='trendBadge up';setup.classList.add('hidden');record.title='Responder falando com transcrição local';
+  }else{
+    const binary=voiceRuntime?.binaryReady?'binário pronto':'binário ausente',model=voiceRuntime?.modelReady?'modelo pronto':'modelo ausente';
+    status.textContent='Voz offline: configuração necessária';status.className='trendBadge neutral';setup.classList.remove('hidden');record.title=`Whisper não configurado (${binary}; ${model})`;
+  }
 }
 function renderOverview(o){
   $('#stats').innerHTML=`<div><b>${o.completed}</b><span>sessões concluídas</span></div><div><b>${o.averageScore}%</b><span>desempenho médio</span></div><div><b>${o.words}</b><span>palavras produzidas</span></div><div><b>${o.xp}</b><span>XP de imersão</span></div>`;
@@ -47,7 +56,7 @@ async function send(text=$('#response').value,choiceId='',inputMode='text'){
   if(trimmed)appendBubble('user','Tú',trimmed);const responseMs=Math.max(0,Date.now()-startedAt);startedAt=Date.now();
   try{
     const result=await api(`/api/immersion/${current.id}/respond`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:trimmed,choiceId,inputMode,responseMs})});
-    appendBubble('partner',current.mode==='story'?'SIDES':'Interlocutor',result.partner);renderFeedback(result);
+    appendBubble('partner',current.mode==='story'?'CURESP':'Interlocutor',result.partner);renderFeedback(result);
     current=result.session;
     if(result.completed)finish(result);else renderSession(false);
   }catch(e){$('#turnFeedback').innerHTML=`<div class="feedbackBox warn"><b>Não foi possível processar o turno.</b><p>${safe(e.message)}</p></div>`}finally{$('#sendBtn').disabled=false}
@@ -61,9 +70,21 @@ async function finish(result){
   if(planQueue.length)$('#continuePlan').onclick=async()=>{const next=planQueue.shift();await start(next.mode,next.id)};else $('#another').onclick=()=>start('scenario');await load();c.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
+function voiceNotice(title,message){$('#turnFeedback').innerHTML=`<div class="feedbackBox warn"><b>${safe(title)}</b><p>${safe(message)}</p></div>`}
+function microphoneErrorMessage(error){
+  if(error?.name==='NotAllowedError'||error?.name==='SecurityError')return 'O Chrome não tem permissão para usar o microfone. Clique no ícone ao lado do endereço 127.0.0.1, permita Microfone e tente novamente.';
+  if(error?.name==='NotFoundError'||error?.name==='DevicesNotFoundError')return 'Nenhum microfone foi encontrado no Windows. Verifique se o dispositivo está conectado e habilitado.';
+  if(error?.name==='NotReadableError'||error?.name==='TrackStartError')return 'O microfone foi encontrado, mas não pôde ser aberto. Ele pode estar sendo usado exclusivamente por outro aplicativo.';
+  return `Não foi possível abrir o microfone${error?.message?`: ${error.message}`:'.'}`;
+}
 async function record(){
-  if(!voiceReady)return alert('Whisper local não está configurado. Execute CONFIGURAR-VOZ-OFFLINE.ps1 ou responda por texto.');if(!navigator.mediaDevices?.getUserMedia)return alert('Microfone indisponível.');
-  const stream=await navigator.mediaDevices.getUserMedia({audio:true});chunks=[];mediaRecorder=new MediaRecorder(stream);mediaRecorder.ondataavailable=e=>chunks.push(e.data);mediaRecorder.onstop=async()=>{stream.getTracks().forEach(t=>t.stop());clearInterval(timerId);try{const blob=new Blob(chunks,{type:mediaRecorder.mimeType||'audio/webm'}),wav=await toWav(blob);$('#turnFeedback').innerHTML='<div class="feedbackBox">Transcrevendo localmente…</div>';const r=await fetch('/api/speech/transcribe',{method:'POST',headers:{'Content-Type':'audio/wav'},body:wav});const data=await r.json();if(!r.ok)throw new Error(data.error||'Falha na transcrição');$('#response').value=data.transcript;await send(data.transcript,'','voice')}catch(e){$('#turnFeedback').innerHTML=`<div class="feedbackBox warn">${safe(e.message)}</div>`}finally{$('#recordBtn').disabled=false;$('#stopBtn').disabled=true;$('#timer').textContent='00:00'}};mediaRecorder.start();const started=Date.now();timerId=setInterval(()=>{const s=Math.floor((Date.now()-started)/1000);$('#timer').textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`},250);$('#recordBtn').disabled=true;$('#stopBtn').disabled=false;
+  if(!voiceReady){voiceNotice('Voz offline ainda não está configurada','Abra Menu Iniciar → CURESP → Configurar voz offline. Depois da configuração o CURESP reinicia e a resposta por voz fica disponível. Você pode continuar este turno por texto.');return}
+  if(!navigator.mediaDevices?.getUserMedia){voiceNotice('Microfone indisponível','Este navegador não oferece acesso ao microfone para esta página.');return}
+  let stream;
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){voiceNotice('Não foi possível acessar o microfone',microphoneErrorMessage(e));return}
+  try{
+    chunks=[];mediaRecorder=new MediaRecorder(stream);mediaRecorder.ondataavailable=e=>chunks.push(e.data);mediaRecorder.onstop=async()=>{stream.getTracks().forEach(t=>t.stop());clearInterval(timerId);try{const blob=new Blob(chunks,{type:mediaRecorder.mimeType||'audio/webm'}),wav=await toWav(blob);$('#turnFeedback').innerHTML='<div class="feedbackBox">Transcrevendo localmente…</div>';const r=await fetch('/api/speech/transcribe',{method:'POST',headers:{'Content-Type':'audio/wav'},body:wav});const data=await r.json();if(!r.ok)throw new Error(data.error||'Falha na transcrição');$('#response').value=data.transcript;await send(data.transcript,'','voice')}catch(e){voiceNotice('Não foi possível transcrever o áudio',e.message)}finally{$('#recordBtn').disabled=false;$('#stopBtn').disabled=true;$('#timer').textContent='00:00'}};mediaRecorder.start();const started=Date.now();timerId=setInterval(()=>{const s=Math.floor((Date.now()-started)/1000);$('#timer').textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`},250);$('#recordBtn').disabled=true;$('#stopBtn').disabled=false;
+  }catch(e){stream.getTracks().forEach(t=>t.stop());voiceNotice('Não foi possível iniciar a gravação',e.message||'O gravador de áudio não está disponível neste navegador.')}
 }
 function stop(){if(mediaRecorder&&mediaRecorder.state!=='inactive')mediaRecorder.stop();mediaRecorder=null}
 async function toWav(blob){const ab=await blob.arrayBuffer(),ctx=new AudioContext(),decoded=await ctx.decodeAudioData(ab.slice(0)),length=Math.ceil(decoded.duration*16000),offline=new OfflineAudioContext(1,length,16000),src=offline.createBufferSource();src.buffer=decoded;src.connect(offline.destination);src.start();const rendered=await offline.startRendering();await ctx.close();return encodeWav(rendered.getChannelData(0),16000)}
