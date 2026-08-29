@@ -28,7 +28,11 @@ if(-not (Test-Path -LiteralPath (Join-Path $Root 'node_modules\ts-fsrs\package.j
   if($LASTEXITCODE -ne 0){Fail 'NPM_INSTALL_FAILED'}
 }
 
-$out=[IO.Path]::GetFullPath((Join-Path $Root $OutputDir))
+if([IO.Path]::IsPathRooted($OutputDir)){
+  $out=[IO.Path]::GetFullPath($OutputDir)
+}else{
+  $out=[IO.Path]::GetFullPath((Join-Path $Root $OutputDir))
+}
 New-Item -ItemType Directory -Path $out -Force | Out-Null
 $stage=Join-Path $out ("CURESP-$version-windows-x64-stage")
 $zip=Join-Path $out ("CURESP-$version-windows-x64.zip")

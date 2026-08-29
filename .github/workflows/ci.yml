@@ -75,9 +75,11 @@ jobs:
             [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file), [ref]$tokens, [ref]$errors) | Out-Null
             if ($errors.Count -gt 0) { $errors | Format-List | Out-String | Write-Error; exit 1 }
           }
-      - name: Build verified Windows package
+      - name: Build verified Windows package with absolute output path
         shell: powershell
-        run: .\BUILD-WINDOWS-PACKAGE.ps1 -OutputDir dist
+        run: |
+          $absoluteDist = [IO.Path]::GetFullPath((Join-Path $PWD 'dist'))
+          .\BUILD-WINDOWS-PACKAGE.ps1 -OutputDir $absoluteDist
       - name: Installed package smoke test
         shell: powershell
         run: |
