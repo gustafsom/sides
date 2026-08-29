@@ -1,16 +1,16 @@
-# Auditoria de licenças — SIDES 1.0.0
+# Auditoria de licenças — CURESP 1.0.0
 
-Data da revisão: 2026-08-28.
+Data da revisão: 2026-08-29.
 
 Esta revisão é técnica e não constitui parecer jurídico.
 
 ## Resultado
 
-O pacote padrão do SIDES 1.0.0 redistribui somente o runtime Node.js e `ts-fsrs@5.4.1` como componentes de terceiros. Whisper, LanguageTool e Piper permanecem opcionais e fora do pacote.
+O pacote padrão do CURESP 1.0.0 redistribui somente o runtime Node.js e `ts-fsrs@5.4.1` como componentes de terceiros. Whisper, LanguageTool e Piper permanecem opcionais e fora do pacote.
 
 ### Node.js
 
-O runtime portátil é redistribuído para permitir execução do SIDES sem instalação prévia de Node/npm. O build da release exige a presença do arquivo de licença da distribuição Node e o copia para `payload/runtime/NODE-LICENSE.txt`. Se a licença não puder ser localizada, o build deve falhar de forma fechada.
+O runtime portátil é redistribuído para permitir execução do CURESP sem instalação prévia de Node/npm. O build da release exige a presença do arquivo de licença da distribuição Node e o copia para `payload/runtime/NODE-LICENSE.txt`. Se a licença não puder ser localizada, o build deve falhar de forma fechada.
 
 ### ts-fsrs 5.4.1
 
@@ -22,15 +22,17 @@ Licença do software: MIT. Não é redistribuído pelo pacote. O usuário pode i
 
 ### LanguageTool
 
-O core é distribuído sob GNU LGPL 2.1; os próprios mantenedores registram que recursos podem ter licenças diferentes. O SIDES não redistribui LanguageTool: o configurador separado baixa a distribuição original para uso local.
+O core é distribuído sob GNU LGPL 2.1; os próprios mantenedores registram que recursos podem ter licenças diferentes. O CURESP não redistribui LanguageTool: o configurador separado baixa a distribuição original para uso local.
 
 ### Piper
 
-A implementação atual do projeto de referência usa GPL-3.0. Para evitar incorporar uma obrigação de redistribuição não planejada, o SIDES não inclui Piper nem modelos de voz na release. A integração permanece apenas como adaptador opcional para instalação feita separadamente pelo usuário.
+A implementação atual do projeto de referência usa GPL-3.0. Para evitar incorporar uma obrigação de redistribuição não planejada, o CURESP não inclui Piper nem modelos de voz na release. A integração permanece apenas como adaptador opcional para instalação feita separadamente pelo usuário.
 
-## Licença do próprio SIDES
+## Licença do próprio CURESP
 
-O repositório do SIDES não declara atualmente uma licença open source própria. O Bloco 13 não inventa nem atribui uma licença ao código do usuário. Isso não impede o proprietário do repositório de produzir seu próprio pacote/release, mas terceiros não devem presumir permissão de redistribuição do código do SIDES.
+O repositório do CURESP não declara atualmente uma licença open source própria. A Release 1.0 não inventa nem atribui uma licença ao código do usuário. Isso não impede o proprietário do repositório de produzir seu próprio pacote/release, mas terceiros não devem presumir permissão de redistribuição do código do CURESP.
+
+O repositório GitHub ainda usa o nome histórico `gustafsom/sides`; isso não altera a identidade oficial CURESP nem a análise de licenças.
 
 Se o projeto passar a ser distribuído para terceiros sob uma licença específica, essa decisão deve ser registrada separadamente antes da distribuição externa do código-fonte.
 
