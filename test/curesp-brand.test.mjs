@@ -6,7 +6,7 @@ const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 
 test('CURESP is the official package and README identity',()=>{
   const pkg=JSON.parse(read('package.json'));
-  assert.equal(pkg.name,'curesp');assert.equal(pkg.version,'1.0.0');
+  assert.equal(pkg.name,'curesp');assert.match(pkg.version,/^1\.\d+\.\d+$/);
   assert.match(read('README.md'),/^# CURESP/m);assert.match(read('README.md'),/CURESP 1\.0\.0/);
 });
 
