@@ -2,6 +2,22 @@
 
 Todas as mudanças relevantes do CURESP são registradas neste arquivo a partir da versão 1.0.0.
 
+## [1.1.0] - Em desenvolvimento
+
+### Melhorado
+- diagnóstico com opções alinhadas, área de clique consistente e foco de teclado visível;
+- contraste de links, textos auxiliares, bordas e estados de foco no tema escuro;
+- navegação persistente no painel para localizar rapidamente trilha, imersão, fala, escrita, designações, Trilha JW e dados;
+- Trilha de hoje reduzida a uma sessão guiada de 12 passos e realmente intercalada entre habilidades;
+- indicador de progresso `Passo X de Y` durante a trilha e condução automática para a próxima habilidade;
+- distinção mais clara entre a Trilha de hoje e os atalhos de treino rápido por habilidade;
+- explicações de gramática com linguagem cotidiana, “Em palavras simples” e “Atalho mental”, mantendo a regra resumida como detalhe opcional;
+- textos visíveis restantes atualizados para a identidade CURESP.
+
+### Compatibilidade
+- banco, API, exportação, SQLite e demais contratos internos `SIDES-*` permanecem inalterados;
+- a release imutável `v1.0.0` não é modificada.
+
 ## [1.0.0] - 2026-08-29
 
 ### Adicionado
