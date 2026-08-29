@@ -38,7 +38,14 @@
 
   <section class="card privacyStrip">
     <div><strong>Privacidade por desenho</strong><p class="sub">Resposta e transcrição existem apenas durante o turno. O histórico guarda métricas, não o que você escreveu ou falou.</p></div>
-    <span id="voiceStatus" class="trendBadge neutral">Whisper: verificando…</span>
+    <div class="voiceRuntime">
+      <span id="voiceStatus" class="trendBadge neutral">Voz offline: verificando…</span>
+      <div id="voiceSetup" class="voiceSetup hidden" role="status">
+        <strong>Ative a resposta por voz uma única vez</strong>
+        <p>No Windows, abra <b>Menu Iniciar → CURESP → Configurar voz offline</b>. O CURESP baixa e verifica o Whisper e o modelo local, reinicia automaticamente e continua sem enviar seu áudio para a internet.</p>
+        <p class="sub">Enquanto a configuração não estiver pronta, você pode continuar a mesma atividade respondendo por texto.</p>
+      </div>
+    </div>
   </section>
 
   <section id="sessionCard" class="card hidden">

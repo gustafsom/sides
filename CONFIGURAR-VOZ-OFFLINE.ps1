@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Tools = Join-Path $Root 'tools\whisper'
 $Models = Join-Path $Root 'models\whisper'
-$Temp = Join-Path ([IO.Path]::GetTempPath()) ('sides-whisper-' + [guid]::NewGuid().ToString('N'))
+$Temp = Join-Path ([IO.Path]::GetTempPath()) ('curesp-whisper-' + [guid]::NewGuid().ToString('N'))
 $Zip = Join-Path $Temp 'whisper-bin-x64.zip'
 $Model = Join-Path $Models 'ggml-base.bin'
 
@@ -18,9 +18,40 @@ function Assert-Hash([string]$Path,[string]$Algorithm,[string]$Expected) {
     if ($actual -ne $Expected.ToLowerInvariant()) { throw "Checksum inválido em $Path. Esperado $Expected; obtido $actual." }
 }
 
+function Test-CurespHealth([string]$Url) {
+    try {
+        $r = Invoke-RestMethod -Uri ($Url + '/api/health') -TimeoutSec 1
+        return ($r.ok -eq $true -and $r.app -eq 'SIDES' -and ([string]$r.schema).StartsWith('SIDES-API-'))
+    } catch { return $false }
+}
+
+function Restart-CurespIfInstalled {
+    $launcher = Join-Path $Root 'CURESP.vbs'
+    $statePath = Join-Path $Root 'install-state.json'
+    if (-not (Test-Path -LiteralPath $launcher) -or -not (Test-Path -LiteralPath $statePath)) { return $false }
+
+    $url = 'http://127.0.0.1:4317'
+    if (Test-CurespHealth $url) {
+        try {
+            $listener = Get-NetTCPConnection -LocalAddress '127.0.0.1' -LocalPort 4317 -State Listen -ErrorAction Stop | Select-Object -First 1
+            if ($listener -and $listener.OwningProcess) {
+                Stop-Process -Id $listener.OwningProcess -Force -ErrorAction Stop
+                Start-Sleep -Milliseconds 500
+            }
+        } catch {
+            Write-Host 'A voz foi configurada, mas o CURESP não pôde ser reiniciado automaticamente.' -ForegroundColor Yellow
+            return $false
+        }
+    }
+
+    $wscript = Join-Path $env:WINDIR 'System32\wscript.exe'
+    Start-Process -FilePath $wscript -ArgumentList ('"' + $launcher + '"') -WorkingDirectory $Root | Out-Null
+    return $true
+}
+
 try {
     New-Item -ItemType Directory -Force -Path $Temp,$Tools,$Models | Out-Null
-    Write-Host 'SIDES - Configuração da fala offline' -ForegroundColor Cyan
+    Write-Host 'CURESP - Configuração da voz offline' -ForegroundColor Cyan
     Write-Host 'Baixando binário oficial do whisper.cpp...'
     Invoke-WebRequest -Uri $WhisperUrl -OutFile $Zip -UseBasicParsing
     Assert-Hash $Zip 'SHA256' $WhisperSha256
@@ -28,7 +59,16 @@ try {
     New-Item -ItemType Directory -Force -Path $Tools | Out-Null
     Expand-Archive -Path $Zip -DestinationPath $Tools -Force
 
-    if (-not (Test-Path $Model)) {
+    $downloadModel = -not (Test-Path -LiteralPath $Model)
+    if (-not $downloadModel) {
+        try { Assert-Hash $Model 'SHA1' $ModelSha1 }
+        catch {
+            Write-Host 'O modelo local existente não passou na verificação. Baixando uma cópia íntegra...' -ForegroundColor Yellow
+            Remove-Item -LiteralPath $Model -Force -ErrorAction SilentlyContinue
+            $downloadModel = $true
+        }
+    }
+    if ($downloadModel) {
         Write-Host 'Baixando modelo multilíngue base (~142 MiB)...'
         Invoke-WebRequest -Uri $ModelUrl -OutFile $Model -UseBasicParsing
     }
@@ -41,8 +81,18 @@ try {
     Write-Host 'Whisper offline configurado com sucesso.' -ForegroundColor Green
     Write-Host "CLI: $($cli.FullName)"
     Write-Host "Modelo: $Model"
-    Write-Host 'Reinicie o SIDES e abra Fala offline.'
     Write-Host 'Nenhum áudio é enviado a serviços externos.'
+
+    if (Restart-CurespIfInstalled) {
+        Write-Host 'CURESP reiniciado automaticamente. A resposta por voz já pode ser usada.' -ForegroundColor Green
+    } else {
+        Write-Host 'Feche e abra novamente o CURESP para ativar a resposta por voz.' -ForegroundColor Cyan
+    }
+}
+catch {
+    Write-Host ''
+    Write-Host ('Não foi possível configurar a voz offline: ' + $_.Exception.Message) -ForegroundColor Red
+    throw
 }
 finally {
     Remove-Item -Recurse -Force $Temp -ErrorAction SilentlyContinue

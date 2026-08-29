@@ -12,6 +12,10 @@ Todas as mudanças relevantes do CURESP são registradas neste arquivo a partir 
 - indicador de progresso `Passo X de Y` durante a trilha e condução automática para a próxima habilidade;
 - distinção mais clara entre a Trilha de hoje e os atalhos de treino rápido por habilidade;
 - explicações de gramática com linguagem cotidiana, “Em palavras simples” e “Atalho mental”, mantendo a regra resumida como detalhe opcional;
+- resposta por voz na Imersão agora diferencia Whisper não configurado de falhas reais do microfone, sem alerta bloqueante;
+- orientação visível para ativar a voz offline pelo Menu Iniciar e fallback por texto enquanto o Whisper não estiver pronto;
+- configuração do Whisper atualizada para a marca CURESP, com verificação do modelo e reinício automático da instalação Windows;
+- Fala offline agora explica a configuração necessária, diferencia erros de permissão/dispositivo e evita tentar análise automática sem Whisper;
 - textos visíveis restantes atualizados para a identidade CURESP.
 
 ### Compatibilidade

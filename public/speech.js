@@ -8,7 +8,7 @@ async function load(){
 }
 function renderRuntime(){
   const w=runtime.whisper,p=runtime.piper;
-  $('#runtime').innerHTML=`<p class="${w.ready?'runtimeOk':'runtimeWarn'}">Whisper: ${w.ready?'pronto':'não configurado'}</p><p class="sub">Binário: ${w.binaryReady?'ok':'ausente'} · Modelo: ${w.modelReady?safe(w.modelName):'ausente'} · idioma: espanhol</p><p class="${p.ready?'runtimeOk':'runtimeWarn'}">Piper: ${p.ready?'pronto':'opcional/não configurado'}</p><p class="sub">Fallback TTS: voz espanhola do navegador/SO.</p>`;
+  $('#runtime').innerHTML=`<p class="${w.ready?'runtimeOk':'runtimeWarn'}">Whisper: ${w.ready?'pronto':'não configurado'}</p><p class="sub">Binário: ${w.binaryReady?'ok':'ausente'} · Modelo: ${w.modelReady?safe(w.modelName):'ausente'} · idioma: espanhol</p>${w.ready?'':`<div class="runtimeSetup"><b>Para ativar a transcrição automática</b><p>Abra <b>Menu Iniciar → CURESP → Configurar voz offline</b>. A configuração é feita uma vez, valida os arquivos baixados e reinicia o CURESP.</p></div>`}<p class="${p.ready?'runtimeOk':'runtimeWarn'}">Piper: ${p.ready?'pronto':'opcional/não configurado'}</p><p class="sub">Fallback TTS: voz espanhola do navegador/SO.</p>`;
 }
 function renderOverview(o){
   const recent=o.recent||[];
@@ -26,9 +26,18 @@ async function hear(){
   speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='es';speechSynthesis.speak(u);
 }
 function startTimer(){startedAt=Date.now();clearInterval(timerId);timerId=setInterval(()=>{const s=Math.floor((Date.now()-startedAt)/1000);$('#timer').textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`},250)}
+function microphoneErrorMessage(error){
+  if(error?.name==='NotAllowedError'||error?.name==='SecurityError')return 'O Chrome não tem permissão para usar o microfone. Clique no ícone ao lado do endereço 127.0.0.1, permita Microfone e tente novamente.';
+  if(error?.name==='NotFoundError'||error?.name==='DevicesNotFoundError')return 'Nenhum microfone foi encontrado no Windows. Verifique se o dispositivo está conectado e habilitado.';
+  if(error?.name==='NotReadableError'||error?.name==='TrackStartError')return 'O microfone foi encontrado, mas não pôde ser aberto. Ele pode estar sendo usado exclusivamente por outro aplicativo.';
+  return `Não foi possível abrir o microfone${error?.message?`: ${error.message}`:'.'}`;
+}
 async function record(){
-  if(!navigator.mediaDevices?.getUserMedia)return alert('Microfone indisponível neste navegador.');
-  const stream=await navigator.mediaDevices.getUserMedia({audio:true});chunks=[];mediaRecorder=new MediaRecorder(stream);mediaRecorder.ondataavailable=e=>chunks.push(e.data);mediaRecorder.onstop=async()=>{stream.getTracks().forEach(t=>t.stop());const blob=new Blob(chunks,{type:mediaRecorder.mimeType||'audio/webm'});if(recordingUrl)URL.revokeObjectURL(recordingUrl);recordingUrl=URL.createObjectURL(blob);$('#preview').innerHTML=`<audio controls src="${recordingUrl}"></audio><p class="sub">Gravação temporária nesta aba.</p>`;try{const converted=await toWav(blob);wavBuffer=converted.wav;audioStats=converted.stats;$('#analyze').disabled=false}catch(e){$('#preview').insertAdjacentHTML('beforeend',`<p>${safe(e.message)}</p>`)};};mediaRecorder.start();startTimer();$('#record').disabled=true;$('#stop').disabled=false;$('#analyze').disabled=true;
+  if(!navigator.mediaDevices?.getUserMedia){showError('Este navegador não oferece acesso ao microfone para esta página.');return}
+  let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){showError(microphoneErrorMessage(e));return}
+  try{
+    chunks=[];mediaRecorder=new MediaRecorder(stream);mediaRecorder.ondataavailable=e=>chunks.push(e.data);mediaRecorder.onstop=async()=>{stream.getTracks().forEach(t=>t.stop());const blob=new Blob(chunks,{type:mediaRecorder.mimeType||'audio/webm'});if(recordingUrl)URL.revokeObjectURL(recordingUrl);recordingUrl=URL.createObjectURL(blob);$('#preview').innerHTML=`<audio controls src="${recordingUrl}"></audio><p class="sub">Gravação temporária nesta aba.</p>`;try{const converted=await toWav(blob);wavBuffer=converted.wav;audioStats=converted.stats;$('#analyze').disabled=!runtime?.whisper?.ready;if(!runtime?.whisper?.ready)$('#preview').insertAdjacentHTML('beforeend','<p class="sub">Whisper ainda não configurado: use a transcrição manual ou ative a voz offline pelo Menu Iniciar → CURESP.</p>')}catch(e){$('#preview').insertAdjacentHTML('beforeend',`<p>${safe(e.message)}</p>`)};};mediaRecorder.start();startTimer();$('#record').disabled=true;$('#stop').disabled=false;$('#analyze').disabled=true;
+  }catch(e){stream.getTracks().forEach(t=>t.stop());showError(e.message||'Não foi possível iniciar a gravação.')}
 }
 function stop(){if(mediaRecorder&&mediaRecorder.state!=='inactive')mediaRecorder.stop();mediaRecorder=null;clearInterval(timerId);$('#record').disabled=false;$('#stop').disabled=true}
 async function toWav(blob){
@@ -42,7 +51,7 @@ function measureSilence(samples,rate){
   let first=voiced.indexOf(true),last=voiced.lastIndexOf(true);if(first<0){first=0;last=voiced.length-1}let pauses=[],run=0;for(let i=first;i<=last;i++){if(!voiced[i])run++;else if(run){pauses.push(run*20);run=0}}if(run)pauses.push(run*20);return {durationMs:Math.round(samples.length/rate*1000),pauseCount:pauses.filter(x=>x>=300).length,longPauses:pauses.filter(x=>x>=700).length,maxPauseMs:pauses.length?Math.max(...pauses):0,totalSilenceMs:Math.round(pauses.reduce((a,b)=>a+b,0))};
 }
 async function analyze(){
-  const expected=$('#expected').value.trim();if(!expected||!wavBuffer)return;
+  const expected=$('#expected').value.trim();if(!expected||!wavBuffer)return;if(!runtime?.whisper?.ready){showError('Whisper local ainda não está configurado. Abra Menu Iniciar → CURESP → Configurar voz offline ou use a transcrição manual.');return}
   $('#analyze').disabled=true;try{const r=await fetch('/api/speech/transcribe',{method:'POST',headers:{'Content-Type':'audio/wav'},body:wavBuffer});const data=await r.json();if(!r.ok)throw new Error(data.error||'Falha na transcrição');await compare(data.transcript)}catch(e){showError(e.message)}finally{$('#analyze').disabled=false}
 }
 async function compare(transcript){
@@ -52,5 +61,5 @@ async function compare(transcript){
 function renderResult(data){
   const m=data.metrics;$('#result').classList.remove('hidden');$('#result').innerHTML=`<h2>Resultado</h2><div class="metricGrid"><div class="speechMetric"><b>${m.accuracy}%</b><span>correspondência</span></div><div class="speechMetric"><b>${m.counts.omit}</b><span>omissões</span></div><div class="speechMetric"><b>${m.counts.substitute}</b><span>substituições</span></div><div class="speechMetric"><b>${m.wpm}</b><span>palavras/min</span></div><div class="speechMetric"><b>${m.longPauses}</b><span>pausas longas</span></div></div><h3>Comparação</h3><div class="diffLine">${m.steps.map(x=>`<span class="diffToken ${x.kind}" title="${safe(x.kind)}">${safe(x.kind==='add'?`+${x.recognized}`:x.kind==='omit'?`−${x.expected}`:x.kind==='substitute'?`${x.expected}→${x.recognized}`:x.expected)}</span>`).join('')}</div><h3>O que treinar agora</h3><div class="speechGuide">${data.guidance.map(x=>`<div>${safe(x)}</div>`).join('')}</div><p class="sub">Transcrição reconhecida: ${safe(data.transcript)}</p><p class="sub">${safe(data.notice)}</p>`;$('#result').scrollIntoView({behavior:'smooth',block:'start'});
 }
-function showError(message){$('#result').classList.remove('hidden');$('#result').innerHTML=`<h2>Não foi possível transcrever automaticamente</h2><p>${safe(message)}</p><p class="sub">Você pode usar o fallback de transcrição manual abaixo do gravador. O SIDES continua funcional sem o componente opcional.</p>`}
+function showError(message){$('#result').classList.remove('hidden');$('#result').innerHTML=`<h2>Não foi possível usar a transcrição automática</h2><p>${safe(message)}</p><p class="sub">O CURESP continua funcional: você pode configurar a voz offline ou usar o fallback de transcrição manual abaixo do gravador.</p>`}
 $('#record').onclick=record;$('#stop').onclick=stop;$('#analyze').onclick=analyze;$('#loadTarget').onclick=loadTarget;$('#newTarget').onclick=loadTarget;$('#hear').onclick=hear;$('#manualAnalyze').onclick=()=>compare($('#manualTranscript').value);$('#kind').onchange=loadTarget;load().then(loadTarget);
